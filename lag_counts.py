@@ -12,6 +12,11 @@ pairs=[]
 latdeg2km=111.321
 londeg2km=65.122785
 
+meridional_distance=True
+zonal_distance=False
+horizontal_distance=False
+
+
 h=h5py.File("res/simone_nov2018_multilink_juha_30min_1000m.h5","r")
 lats=h["lats"].value
 lons=h["lons"].value
@@ -21,7 +26,7 @@ print("total number of measurements %d"%(len(t)))
 
 # define a histogram
 n_m=len(lats)
-rgs=n.arange(80,100)
+rgs=n.arange(80,105)
 dh=1.0
 
 h_bins=100
@@ -58,24 +63,33 @@ for ri in range(comm.rank,len(rgs),comm.size):
         t0=t0s[mi]            
 
         # horizontal distances
-        hor_dists=n.sqrt((n.abs(lats0[mi:len(lats0)]-lat0)*latdeg2km)**2.0 + (n.abs(lons0[mi:len(lats0)]-lon0)*londeg2km)**2.0 )
-#        print(n.max(hor_dists))
- #       print(n.log10(n.max(hor_dists)))
-        # temporal distances
-#        plt.plot(hor_dists,".")
- #       plt.show()
+        if horizontal_distance:
+            hor_dists=n.sqrt((n.abs(lats0[mi:len(lats0)]-lat0)*latdeg2km)**2.0 + (n.abs(lons0[mi:len(lats0)]-lon0)*londeg2km)**2.0 )
+        if meridional_distance:
+            hor_dists=n.abs(lats0[mi:len(lats0)]-lat0)*latdeg2km
+        if zonal_distance:
+            hor_dists=n.abs(lons0[mi:len(lats0)]-lon0)*londeg2km
+            
         temporal_dists = n.abs(t[mi:len(lats0)]-t0)
         H0,xe,ye=n.histogram2d(n.log10(hor_dists+0.1),n.log10(temporal_dists+0.1),bins=[hdist_bins,tdist_bins])
         H+=H0
-        #print(n.max(xe))
-        #print(n.max(ye))        
+
     plt.pcolormesh(xe,ye,n.transpose(n.log10(H+1)))
     cb=plt.colorbar()
     cb.set_label("$\log_{10}$ (counts)")
-    plt.xlabel("Horizontal distance $\log_{10}$ (km)")
+    if horizontal_distance:
+        plt.xlabel("Horizontal distance $\log_{10}$ (km)")
+        fpref="hord"
+    if meridional_distance:
+        plt.xlabel("Meridional distance $\log_{10}$ (km)")
+        fpref="merd"        
+    if zonal_distance:
+        plt.xlabel("Zonal distance $\log_{10}$ (km)")
+        fpref="zond"        
+        
     plt.ylabel("Temporal distance $\log_{10}$ (s)")
     plt.title("Distribution of horizontal and temporal lags, h=%1.0f km"%(rg))
-    plt.savefig("hist_%1.2f.png"%(rg))
+    plt.savefig("fig/%s_%1.2f.png"%(fpref,rg))
     plt.close()
     plt.clf()
         
