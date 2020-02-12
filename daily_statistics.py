@@ -11,7 +11,7 @@ fl=glob.glob("%s/*.h5"%(conf.data_directory))
 fl.sort()
 n_files=len(fl)
 print(n_files)
-links=["Alta_Alta","Andenes_Andenes","Andenes_Straumen","Tromso_Tromso"]
+links=["Alta_Alta","Andenes_Andenes","Andenes_Straumen","Tromso_Tromso","All"]
 plot_all=False
 
 for link in links:
@@ -22,7 +22,10 @@ for link in links:
     
     for f in fl:
         h=h5py.File(f,"r")
-        idx=n.where(h["link"].value==link)[0]
+        if link=="All":
+            idx=n.arange(len(h["link"].value))
+        else:
+            idx=n.where(h["link"].value==link)[0]
         if len(idx)> 0:
             counts.append(len(n.unique(h["t"].value[idx])))
             print(n.unique(h["link"].value))
