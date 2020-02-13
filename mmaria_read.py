@@ -55,19 +55,16 @@ class mmaria_data:
         """
         Read all meteor radar network data between these times (unix)
         """
-        # first file
-        first_idx=n.where( (self.mint < t0) & (self.maxt > t0)) [0]
-        print(first_idx)
-        if len(first_idx) == 0:
-            print("no data")
-            return(None)
-        
-        # last file
-        last_idx=n.where( (self.mint < t1) & (self.maxt > t1)) [0]
-        print(last_idx)
-        if len(last_idx) == 0:
-            print("no data")
-            return(None)
+        file_idx=[]
+        for fi in range(len(self.fl)):
+            if self.maxt[fi] > t0 and self.mint[fi] < t1:
+ #               print(fi)
+                file_idx.append(fi)
+#        print(file_idx)
+#            x0m---t0--x0m----x1m---x1m---x2m--t1--x2m-----x3m--
+#                file_idx.append(fi)
+
+            # this file contains the start
 
         alpha_norm=n.zeros([0],dtype=n.float32)
         braggs=n.zeros([0,3],dtype=n.float32)
@@ -86,8 +83,9 @@ class mmaria_data:
         v=n.zeros([2,0,30],dtype=n.float32)
         v_resid=n.zeros([0],dtype=n.float32)
         ve=n.zeros([2,0,30],dtype=n.float32)
-
-        for i in range(first_idx,last_idx+1):
+        print("reading")
+        for i in file_idx:#range(first_idx,last_idx+1):
+            print(i)
             h=h5py.File(self.fl[i],"r")
             didx=n.where( ((h["t"].value) > t0) & ((h["t"].value) < t1))[0]
             t = n.concatenate((t,h["t"].value[didx]))
@@ -133,17 +131,21 @@ class mmaria_data:
                 "ve":ve})
 
 
+if __name__ == "__main__":
+    """
+    Example usage
+    """
+    # directory with all mmaria network data
+    md=mmaria_data(c.data_directory)
+    # what is the data bounds (first and last time stamp)
+    print(md.get_bounds())
+    
+    # read all meteor radar data between these two timestamps
+    d=md.read_data(1514774804,1514974804)
 
-# directory with all mmaria network data
-md=mmaria_data(c.data_directory)
-# what is the data bounds (first and last time stamp)
-print(md.get_bounds())
-
-# read all meteor radar data between these two timestamps
-d=md.read_data(1514774804,1514974804)
-plt.pcolormesh(d["times"],d["rgs"]/1e3,n.transpose(d["v"][0,:,:]),vmin=-100,vmax=100)
-plt.xlabel("Time (unix)")
-plt.ylabel("Altitude (km)")
-plt.colorbar()
-plt.show()
+    plt.pcolormesh(d["times"],d["rgs"]/1e3,n.transpose(d["v"][0,:,:]),vmin=-100,vmax=100)
+    plt.xlabel("Time (unix)")
+    plt.ylabel("Altitude (km)")
+    plt.colorbar()
+    plt.show()
 
