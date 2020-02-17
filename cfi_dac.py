@@ -19,6 +19,7 @@ import scipy.interpolate as si
 import scipy.optimize as sio
 
 n.set_printoptions(precision=3)
+
 # for parallel processing.
 from mpi4py import MPI
 comm = MPI.COMM_WORLD

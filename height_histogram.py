@@ -13,7 +13,6 @@ def get_height_histogram(n_t=None,d_delta=7):
 
     b=md.get_bounds()
 
-    d_delta=30
     if n_t == None:
         n_t=int(n.floor((b[1]-b[0])/(d_delta*24*3600)))
     print(n_t)
@@ -39,4 +38,4 @@ def get_height_histogram(n_t=None,d_delta=7):
 
 
 if __name__ == "__main__":
-    get_height_histogram()
+    get_height_histogram(d_delta=7)

@@ -51,20 +51,14 @@ class mmaria_data:
     def get_bounds(self):
         return([n.min(self.mint),n.max(self.maxt)])
 
-    def read_data(self,t0,t1):
+    def read_data(self,t0,t1,read_all_detections=True):
         """
         Read all meteor radar network data between these times (unix)
         """
         file_idx=[]
         for fi in range(len(self.fl)):
             if self.maxt[fi] > t0 and self.mint[fi] < t1:
- #               print(fi)
                 file_idx.append(fi)
-#        print(file_idx)
-#            x0m---t0--x0m----x1m---x1m---x2m--t1--x2m-----x3m--
-#                file_idx.append(fi)
-
-            # this file contains the start
 
         alpha_norm=n.zeros([0],dtype=n.float32)
         braggs=n.zeros([0,3],dtype=n.float32)
@@ -87,21 +81,22 @@ class mmaria_data:
         for i in file_idx:#range(first_idx,last_idx+1):
             print(i)
             h=h5py.File(self.fl[i],"r")
-            didx=n.where( ((h["t"].value) > t0) & ((h["t"].value) < t1))[0]
-            t = n.concatenate((t,h["t"].value[didx]))
-            alpha_norm = n.concatenate((alpha_norm,h["alpha_norm"].value[didx]))
-            braggs = n.concatenate((braggs,h["braggs"].value[didx,:]))
+            if read_all_detections:
+                didx=n.where( ((h["t"].value) > t0) & ((h["t"].value) < t1))[0]
+                t = n.concatenate((t,h["t"].value[didx]))
+                alpha_norm = n.concatenate((alpha_norm,h["alpha_norm"].value[didx]))
+                braggs = n.concatenate((braggs,h["braggs"].value[didx,:]))
 
-            dcos = n.concatenate((dcos,h["dcos"].value[didx,:]))
-            dh=h["dh"].value
-            dop_errs = n.concatenate((dop_errs,h["dop_errs"].value[didx]))
-            dops = n.concatenate((dops,h["dops"].value[didx]))
-            dt=h["dt"].value
-            heights=n.concatenate((heights,h["heights"].value[didx]))
-            lats=n.concatenate((lats,h["lats"].value[didx]))
-            lons=n.concatenate((lons,h["lons"].value[didx]))
-            link=n.concatenate((link,h["link"].value[didx]))
-            v_resid=n.concatenate((v_resid,h["v_resid"].value[didx]))
+                dcos = n.concatenate((dcos,h["dcos"].value[didx,:]))
+                dh=h["dh"].value
+                dop_errs = n.concatenate((dop_errs,h["dop_errs"].value[didx]))
+                dops = n.concatenate((dops,h["dops"].value[didx]))
+                dt=h["dt"].value
+                heights=n.concatenate((heights,h["heights"].value[didx]))
+                lats=n.concatenate((lats,h["lats"].value[didx]))
+                lons=n.concatenate((lons,h["lons"].value[didx]))
+                link=n.concatenate((link,h["link"].value[didx]))
+                v_resid=n.concatenate((v_resid,h["v_resid"].value[didx]))
             
             # mean horizontal wind model
             rgs=h["rgs"].value
@@ -111,19 +106,19 @@ class mmaria_data:
             
             if self.debug:
                 print("file idx %d"%(i))
-                
-        return({"t":t,
-                "alpha_norm":alpha_norm,
-                "braggs":braggs,
-                "dcos":dcos,
+        tu,idx=n.unique(t,return_index=True)
+        return({"t":t[idx],
+                "alpha_norm":alpha_norm[idx],
+                "braggs":braggs[idx,:],
+                "dcoss":dcos[idx,:],
                 "dh":dh,
-                "dop_errs":dop_errs,
-                "dops":dops,
+                "dop_errs":dop_errs[idx],
+                "dops":dops[idx],
                 "dt":dt,
-                "heights":heights,
-                "lats":lats,
-                "lons":lons,
-                "link":link,
+                "heights":heights[idx],
+                "lats":lats[idx],
+                "lons":lons[idx],
+                "link":link[idx],
                 "rgs":rgs,
                 "v_resid":v_resid,
                 "times":times,
