@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from mpi4py import MPI
 
+import cfi_config as c
+import mmaria_read as mr
+
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
@@ -17,11 +20,28 @@ zonal_distance=False
 horizontal_distance=False
 
 
-h=h5py.File("res/simone_nov2018_multilink_juha_30min_1000m.h5","r")
-lats=h["lats"].value
-lons=h["lons"].value
-heights=h["heights"].value
-t=h["t"].value
+#h=h5py.File("res/simone_nov2018_multilink_juha_30min_1000m.h5","r")# For a single file   
+#lats=h["lats"].value
+#lons=h["lons"].value
+#heights=h["heights"].value             #heights in km
+#t=h["t"].value
+
+
+#works for mmaria_data
+md=mr.mmaria_data(c.data_directory)#for many files in a directory
+b=md.get_bounds()
+
+d=md.read_data(1514774804,1515974804)
+
+lats=d["lats"]
+lons=d["lons"]
+heights=d["heights"]            #hights in meters
+heights=heights/1000
+t=d["t"]
+
+
+
+# In[]
 print("total number of measurements %d"%(len(t)))
 
 # define a histogram
@@ -89,7 +109,7 @@ for ri in range(comm.rank,len(rgs),comm.size):
         
     plt.ylabel("Temporal distance $\log_{10}$ (s)")
     plt.title("Distribution of horizontal and temporal lags, h=%1.0f km"%(rg))
-    plt.savefig("fig/%s_%1.2f.png"%(fpref,rg))
+    plt.savefig("C:/Users/OleK/Master_thesis/figs/fig_%s_%1.2f.png"%(fpref,rg))
     plt.close()
     plt.clf()
         
@@ -101,4 +121,4 @@ for ri in range(comm.rank,len(rgs),comm.size):
     ho["hist_hd_y"]=ye    
     ho.close()
 
-h.close()
+d.close()

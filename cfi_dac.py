@@ -19,10 +19,9 @@ import scipy.interpolate as si
 import scipy.optimize as sio
 
 n.set_printoptions(precision=3)
-
 # for parallel processing.
-from mpi4py import MPI
-comm = MPI.COMM_WORLD
+#from mpi4py import MPI
+#comm = MPI.COMM_WORLD
 
 # constants,
 # TBD add altitude and latitude dependence
@@ -45,7 +44,7 @@ def vel(t,alt,lats,lons,times,rgs,v,dt,dh):
     ti[ti>(v.shape[1]-1)]=(v.shape[1]-1)
     return(v[0,ti,hi],v[1,ti,hi])
 
-
+# to use with mmaria file? h=mmaria_read().read_data(t0,t1) but .value doesnt work here, must change this script?
 def get_meas(meas_file="res/simone_nov2018_multilink_juha_30min_1000m.h5",
              mean_rem=False,
              plot_dops=False,
@@ -224,19 +223,15 @@ def cfi(m,
                                ( n.abs( t[idx1] - mt0 - tau ) < dtau/2.0 ) )[0]]
             for l in idxt:
                 if "%d-%d"%(k,l) not in pair_dict:
-                    hor_dist = n.sqrt( (latdeg2km*(lats[l]-lat0))**2.0+(londeg2km*(lons[l]-lon0))**2.0)
-                    # filter our measurements that are too close
-                    if hor_dist > 2.0 and n.abs(t[l]-t[k])>2.0:
-                        pair_dict["%d-%d"%(k,l)]=True
-                        pair_dict["%d-%d"%(l,k)]=True
-                        pairs.append((k,l))
-                        tods.append(t[k])
-                        taus.append(t[l]-t[k])
-                        s_zs.append(heights[l]-heights[k])
-                        s_xs.append(londeg2km*(lons[l]-lon0))
-                        s_ys.append(latdeg2km*(lats[l]-lat0))
-                        s_hs.append(hor_dist)
-
+                    pair_dict["%d-%d"%(k,l)]=True
+                    pair_dict["%d-%d"%(l,k)]=True
+                    pairs.append((k,l))
+                    tods.append(t[k])
+                    taus.append(t[l]-t[k])
+                    s_zs.append(heights[l]-heights[k])
+                    s_xs.append(londeg2km*(lons[l]-lon0))
+                    s_ys.append(latdeg2km*(lats[l]-lat0))
+                    s_hs.append(n.sqrt( (latdeg2km*(lats[l]-lat0))**2.0+(londeg2km*(lons[l]-lon0))**2.0))
 
     # histogram and interpolate the number of measurements as a function of day
     tods=n.array(tods)
@@ -405,7 +400,7 @@ def ver_acfs(meas,h0=90,dh=1,tau=0.0,s_z=n.arange(-10,10.0,1.0), s_h=0.0, ds_h=5
 
 
 
-    
+    plt.figure(figsize=(8*1.5,6*1.5))
     plt.subplot(121)
     for i in range(6):
         plt.plot(szs,acfs[:,i],label=names[i])
@@ -433,6 +428,7 @@ def ver_acfs(meas,h0=90,dh=1,tau=0.0,s_z=n.arange(-10,10.0,1.0), s_h=0.0, ds_h=5
     plt.xlabel("Vertical lag (km)")    
     plt.ylabel("Structure function (m$^2$/s$^2$)")
     plt.title("Vertical structure function")
+    plt.tight_layout()
     plt.show()
 
 
@@ -494,20 +490,19 @@ def temporal_acfs(meas,
     return(tau,acfs)
     
 
-def example1a():
+
+
+
+
+def example1():
     # estimate a temporally high pass filtered horizontal acf
     meas=get_meas(mean_rem=True, plot_dops=False, mean_wind_file="res/mean_wind_4h.h5")
-    hor_acfs(meas,h0=95.0,dh=2,ds_z=1.0,ds_h=25.0,s_h=n.arange(0,400.0,25.0),dtau=300.0)
+    hor_acfs(meas,h0=92.0,dh=5,ds_z=1.0,ds_h=25.0,s_h=n.arange(0,400.0,25.0),dtau=600.0)
 
-def example1b():
-    # estimate horizontal acf with no filtering
-    meas=get_meas(mean_rem=False, plot_dops=False, mean_wind_file="res/mean_wind_4h.h5")
-    hor_acfs(meas,h0=93.0,dh=1.0,ds_z=1.0,ds_h=25.0,s_h=n.arange(0,400.0,12.5),dtau=600.0)
-    
 def example2():    
     # estimate a high pass filtered vertical acf
     meas=get_meas(mean_rem=True,plot_dops=False, mean_wind_file="res/mean_wind_1h.h5")
-    ver_acfs(meas,h0=89.0,dh=4.0,s_z=n.arange(0.0,10.0,1.0),dtau=200.0, tau=0.0, s_h=0.0, ds_h=50.0)
+    ver_acfs(meas,h0=89.0,dh=4.0,s_z=n.arange(0.0,10.0,1.0),dtau=300.0, tau=0.0, s_h=0.0, ds_h=100.0)
 
 def example3():
     # estimate a temporal autocorrelation function
@@ -582,13 +577,115 @@ def mean_wind_cf(heights=n.arange(80,111),
     return(C)
     
     
-#mean_wind_cf()
-example1b()
+def meas_groundpoint():
+    #task2, plot groundpoints of al metor data measurments.
+    meas=get_meas(mean_rem=False, plot_dops=False, mean_wind_file="res/mean_wind_4h.h5")
+    lats=meas["lats"]   #~45-61 lats
+    lons=meas["lons"]   #~2-24 lons
+    img = plt.imread("minlonslats_maxlonlats.png")
+    fig, ax = plt.subplots()
+    plt.xticks(n.arange(2, 33, step=2))
+    plt.yticks(n.arange(44, 64, step=2))
+    ax.imshow(img, extent=[1.5, 33, 44, 62])
+    ax.plot(lons, lats, 'ro', markersize=0.5, alpha=0.1)
+    plt.title('Ground point of meteor measurements')
+    plt.xlabel('longitude')
+    plt.ylabel('latitude')
+    plt.show()
+    
+def meas_time_of_day(hour_of_day=n.arange(48)*0.5,
+                     dtau=1800.0):
+    
+    meas=get_meas(mean_rem=False, plot_dops=False, mean_wind_file="res/mean_wind_4h.h5")
+    time=meas["t"]
+    
+    
+    n_times=int((n.max(time)-n.min(time))/(dtau))
+    t0=n.min(time)
+    #y-axis=number of meas during the 30 min interval
+    #x-axis=30 min time bins
+    
+    hod=n.mod(time/3600.0,24)
+    # histogram and interpolate the number of measurements as a function of day
+    hods=n.array(hod)
+    # 30 minute bins, 0..24 hours utc histogram 
+    thist, tbins=n.histogram(n.mod(hods/3600.0,24),bins=48)
+    plt.bar(hour_of_day, thist)
+    plt.title('Time of day when meteor measurements occur')
+    plt.xlabel('hour of day')
+    plt.ylabel('number of measurments')
+    plt.xticks(n.arange(0,25, step=2))
+    plt.show()
 
-#example2()
+def mean_wind_cf_plot():
+    
+    ho=h5py.File("mean_cf.h5", "r")
+    hour_of_day=n.copy(ho["hour_of_day"].value)
+    heights=n.copy(ho["heights"].value)
+    C=n.copy(ho["C"].value)
+
+    a=n.genfromtxt('msis.txt')
+    dens=si.interp1d(a[:,0],a[:,1])
+    
+    Guu_vv=(C[:,:,0].T+C[:,:,1].T)
+    E=n.zeros(Guu_vv.shape)
+    for i in range(len(heights)):
+        E[i,:]=0.5*dens(heights[i])*Guu_vv[i,:]*1e3
+    
+    plt.pcolormesh(hour_of_day, heights, n.log10(E))    #C[:,:,0]=Guu(0,0)
+    
+    plt.title('Kinetic energy[$log_{10}(J/m^3)$]')
+    plt.xlabel('time of day [hours]')
+    plt.ylabel('altitude[km]')
+    
+    plt.colorbar()
+    plt.clim(-4,-1)
+    
+    plt.show()
+
+
+def km500_horizontal_acf():
+    # estimate a temporally high pass filtered horizontal acf
+    meas=get_meas(mean_rem=True, plot_dops=False, mean_wind_file="res/mean_wind_4h.h5")
+    hor_acfs(meas,h0=90.0,dh=5,ds_z=1.0,ds_h=25.0,s_h=n.arange(0,500.0,50.0),dtau=600.0)
+    
+    
+def temporal_acf():
+    # estimate a temporal autocorrelation function for high pass filtered measurements
+    # at most 7 days lag
+    meas=get_meas(mean_rem=False,plot_dops=False, mean_wind_file="res/mean_wind_4h.h5")
+
+    dtau=1800.0
+    h_max=7*24.0
+    n_t=int(h_max*3600.0/dtau)
+    
+    temporal_acfs(meas,h0=93.5,dh=2,ds_z=1.0,ds_h=25.0,dtau=dtau,tau=n.arange(float(n_t))*dtau)
+        
+
+def vertical_acf():    
+    # estimate a high pass filtered vertical acf
+    meas=get_meas(mean_rem=True,plot_dops=False, mean_wind_file="res/mean_wind_1h.h5")
+    ver_acfs(meas,h0=80.0,dh=4.0,s_z=n.arange(0.0,20.0,1.0),dtau=300.0, tau=0.0, s_h=0.0, ds_h=100.0)
+    
+    
+    
+    
+#mean_wind_cf()
+#mean_wind_cf_plot()
+    
+#plot_tacf()
+    
+#example1()
+#example2()    
 #example3()
 #example4()
-#example5()   
-#example1()
-
+#example5() 
+    
+meas_groundpoint()
+meas_time_of_day(hour_of_day=n.arange(48)*0.5, dtau=1800.0)
+    
+#temporal_acf()
+if __name__ == "__main__":
+    vertical_acf()
+#km500_horizontal_acf()
 
