@@ -79,7 +79,7 @@ class mmaria_data:
         ve=n.zeros([2,0,30],dtype=n.float32)
         print("reading")
         for i in file_idx:#range(first_idx,last_idx+1):
-            print(i)
+#            print(i)
             h=h5py.File(self.fl[i],"r")
             if read_all_detections:
                 didx=n.where( ((h["t"].value) > t0) & ((h["t"].value) < t1))[0]
