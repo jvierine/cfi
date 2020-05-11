@@ -12,7 +12,10 @@ import mean_wind_est as mw
 import glob
 
 
-fl=glob.glob("mpi/hacf_res*.h5")
+#summer_hacf
+#winter_hacf
+
+fl=glob.glob("mpi/summer_hacf/hacf_res*.h5")
 fl.sort()
 
 
@@ -28,28 +31,42 @@ acf[:,:]=0
 err[:,:]=0
 all_acfs=[]
 all_errs=[]
+all_sh=[]
 n_avg=0.0
 for f in fl:
     h=h5py.File(f,"r")
-    all_acfs.append(n.copy(h["acfs"].value))
-    all_errs.append(n.copy(h["errs"].value))
-    n_avg+=1.0
+ #   plt.plot(h["acfs"].value[:,0])
+#    plt.show()
+    if n.sum(n.isnan(h["acfs"].value)) == 0:
+        all_acfs.append(n.copy(h["acfs"].value))
+        all_errs.append(n.copy(h["errs"].value))
+        all_sh.append(n.copy(h["s_h"].value))
+        n_avg+=1.0
     h.close()
     
     
 all_acfs=n.array(all_acfs)
 all_errs=n.array(all_errs)
+all_sh=n.array(all_sh)
 err_vars=n.zeros([len(s_h),6])
 acfs=n.zeros([len(s_h),6])
+s_h[:]=0.0
 for i in range(len(s_h)):
+    s_h[i]=n.mean(all_sh[:,i])
     for ci in range(6):
         err_vars[i,ci]=n.var(all_acfs[:,i,ci])
         ws=0.0
         for mi in range(int(n_avg)):
-            w=1.0/all_errs[mi,i,ci]
-            ws+=w
-            acfs[i,ci]+=w*all_acfs[mi,i,ci]
+            if n.sum(n.isnan(all_acfs[mi,i,ci]))== 0:
+                w=1.0/all_errs[mi,i,ci]
+                print(w)
+                ws+=w
+                acfs[i,ci]+=w*all_acfs[mi,i,ci]
+            else:
+                print("nans")
+        print(ws)
         acfs[i,ci]=(1.0/ws)*acfs[i,ci]
+
                     
 names=["$G_{uu}$","$G_{vv}$","$G_{ww}$",
        "$G_{uv}$","$G_{uw}$","$G_{vw}$"]
@@ -62,7 +79,7 @@ cfi.plot_hor_acfs(shs=s_h,
                   ds_h=ds_h,
                   err_vars=err_vars,
                   colors=colors,
-                  zlag=1.0,
+                  zlag=1.1,
                   n_avg=n_avg)
 
     # plt.savefig("C:/Users/OleK/Master_thesis/figs/fig_%s.png"%(name))

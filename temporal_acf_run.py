@@ -90,17 +90,18 @@ def avg_temporal_acfs(dcos_thresh=0.8,
             ho["dh"]=dh
             ho.close()
 
-#avg_temporal_acfs(dcos_thresh=0.8,
-#                  h0=90.0,
-#                  dh=2,
-#                  ds_h=50.0,
-#                  dtau=120.0,
-#                  tau=n.arange(0.0,24*3600,120.0),
-#                  ds_z=1,
-#                  years=[2018,2019],
-#                  months=[5,6,7],
- #                 dstep=3,
-  #                name="summer_tacf_1_120_50km")
+def summer_day():
+    avg_temporal_acfs(dcos_thresh=0.8,
+                      h0=90.0,
+                      dh=2,
+                      ds_h=50.0,
+                      dtau=100.0,
+                      tau=n.arange(0.0,24*3600,100.0),
+                      ds_z=1,
+                      years=[2018,2019],
+                      months=[5,6,7],
+                      dstep=2,
+                      name="summer_tacf_1_120_50km")
 def summer_small_scale():
     avg_temporal_acfs(dcos_thresh=0.8,
                       h0=90.0,
@@ -113,18 +114,32 @@ def summer_small_scale():
                       months=[5,6,7],
                       dstep=3,
                       name="summer_tacf_7_900_25km")
+    
 def winter_small_scale():
     avg_temporal_acfs(dcos_thresh=0.8,
                       h0=90.0,
                       dh=2,
-                      ds_h=25.0,
-                      dtau=900.0,
-                      tau=n.arange(0.0,7*24*3600,900.0),
+                      ds_h=100.0,
+                      dtau=300.0,
+                      tau=n.arange(0.0,24*3600,300.0),
+                      ds_z=1,
+                      years=[2018,2019,2020],
+                      months=[11,12,1],
+                      dstep=7,
+                      name="winter_tacf_1_300_100km")
+def summer_small_scale():
+    avg_temporal_acfs(dcos_thresh=0.8,
+                      h0=90.0,
+                      dh=2,
+                      ds_h=100.0,
+                      dtau=300.0,
+                      tau=n.arange(0.0,24*3600,300.0),
                       ds_z=1,
                       years=[2018,2019],
-                      months=[11,12,1],
-                      dstep=3,
-                      name="winter_tacf_7_900_25km")
+                      months=[5,6,7],
+                      dstep=7,
+                      name="summer_tacf_1_300_100km")
     
 
-winter_small_scale()
+#winter_small_scale()
+summer_small_scale()

@@ -28,12 +28,10 @@ def avg_hor_acfs(md, # data
                  years=[2018,2019,2020],                 
                  months=[5,6,7],
                  name="summer_hacf",
-                 remove_mean=False,
-                 n_days=31):
-
+                 remove_mean=False):
 
     if rank == 0:
-        os.system("rm mpi/%s/hacf_res*.h5"%(name))
+        os.system("rm mpi/%s/*.h5"%(name))        
         os.system("mkdir -p mpi/%s"%(name))
     comm.Barrier()
 
@@ -47,8 +45,8 @@ def avg_hor_acfs(md, # data
     pars=[]
     for year in years:
         for month in months:
-            for day in range(n_days):
-                pars.append([year,month,day])
+            for week in range(4):
+                pars.append([year,month,week*7+1])
     n_pars=len(pars)
     print("n_runs %d"%(n_pars))
 
@@ -56,10 +54,10 @@ def avg_hor_acfs(md, # data
         year=pars[pi][0]
         month=pars[pi][1]
         day=pars[pi][2]
-        d0=datetime.date(year,month,1)
+        d0=datetime.date(year,month,day)
         t0=time.mktime(d0.timetuple())
-    
-        d=md.read_data(t0=t0+day*24*3600.0,t1=t0+(day+1)*24*3600.0)
+        
+        d=md.read_data(t0=t0,t1=t0+7*24*3600.0)
         n_meas=len(d["t"])
         print("n_meteors %d"%(n_meas))
         if n_meas > 100:
@@ -70,14 +68,14 @@ def avg_hor_acfs(md, # data
                                                                     max_alt=105,
                                                                     min_alt=78,
                                                                     dcos_thresh=dcos_thresh,
-                                                                    ofname="res/tmp.h5",
+                                                                    ofname="res/tmp-%03d.h5"%(rank),
                                                                     data='dict')
                 
             meas=cfi.get_meas(meas_file=d,
                               mean_rem=remove_mean,
                               plot_dops=False,
                               dcos_thresh=dcos_thresh,
-                              mean_wind_file="res/tmp.h5",
+                              mean_wind_file="res/tmp-%03d.h5"%(rank),
                               data='mmaria')
             
 
@@ -89,10 +87,11 @@ def avg_hor_acfs(md, # data
                                                       s_h=s_h,
                                                       dtau=dtau,
                                                       title=name)
+            
             ho=h5py.File("mpi/%s/hacf_res-%06d.h5"%(name,pi),"w")
             ho["acfs"]=acfs
             ho["errs"]=errs
-            ho["s_h"]=s_h
+            ho["s_h"]=si_h
             ho["ds_h"]=ds_h
             ho["ds_z"]=ds_z
             ho["dtau"]=dtau
@@ -126,20 +125,99 @@ def avg_hor_acfs(md, # data
 md=mr.mmaria_data(c.data_directory)#for many files in a directory
 b=md.get_bounds()
 
-avg_hor_acfs(md,
-             dcos_thresh=0.8,
-             mean_wind_time_avg=4*3600.0,
-             h0=91.0,
-             dh=2,
-             ds_h=25.0,
-             dtau=300.0,
-             s_h=n.arange(5.0,500.0,25.0),
-             ds_z=1,
-             years=[2018,2019,2020],
-             months=[11,12,1],
-             name="winter_hacf",
-             remove_mean=False,
-             n_days=31)
-exit(0)
+def winter():
+    avg_hor_acfs(md,
+                 dcos_thresh=0.8,
+                 mean_wind_time_avg=4*3600.0,
+                 h0=90.0,
+                 dh=2,
+                 ds_h=25.0,
+                 dtau=600.0,
+                 s_h=n.arange(0.0,500.0,25.0),
+                 ds_z=1,
+                 years=[2018,2019,2020],
+                 months=[11,12,1],
+                 name="winter_hacf",
+                 remove_mean=False)
+def winter_hp():
+    avg_hor_acfs(md,
+                 dcos_thresh=0.7,
+                 mean_wind_time_avg=4*3600.0,
+                 h0=90.0,
+                 dh=2,
+                 ds_h=25.0,
+                 dtau=600.0,
+                 s_h=n.arange(0.0,500.0,25.0),
+                 ds_z=1,
+                 years=[2018,2019,2020],
+                 months=[11,12,1],
+                 name="winter_hp_hacf",
+                 remove_mean=True)
+def spring():
+    avg_hor_acfs(md,
+                 dcos_thresh=0.8,
+                 mean_wind_time_avg=4*3600.0,
+                 h0=90.0,
+                 dh=2,
+                 ds_h=25.0,
+                 dtau=600.0,
+                 s_h=n.arange(0.0,500.0,25.0),
+                 ds_z=1,
+                 years=[2018,2019,2020],
+                 months=[2,3,4],
+                 name="spring_hacf",
+                 remove_mean=False)
+def fall():
+    avg_hor_acfs(md,
+                 dcos_thresh=0.8,
+                 mean_wind_time_avg=4*3600.0,
+                 h0=90.0,
+                 dh=2,
+                 ds_h=25.0,
+                 dtau=600.0,
+                 s_h=n.arange(0.0,500.0,25.0),
+                 ds_z=1,
+                 years=[2018,2019,2020],
+                 months=[8,9,10],
+                 name="fall_hacf",
+                 remove_mean=False)
+
+def summer():
+    avg_hor_acfs(md,
+                 dcos_thresh=0.8,
+                 mean_wind_time_avg=4*3600.0,
+                 h0=90.0,
+                 dh=2,
+                 ds_h=25.0,
+                 dtau=600.0,
+                 s_h=n.arange(0.0,500.0,25.0),
+                 ds_z=1,
+                 years=[2018,2019],
+                 months=[5,6,7],
+                 name="summer_hacf",
+                 remove_mean=False)
+def summer_hp():
+    avg_hor_acfs(md,
+                 dcos_thresh=0.7,
+                 mean_wind_time_avg=4*3600.0,
+                 h0=90.0,
+                 dh=2,
+                 ds_h=25.0,
+                 dtau=600.0,
+                 s_h=n.arange(0.0,500.0,25.0),
+                 ds_z=1,
+                 years=[2018,2019],
+                 months=[5,6,7],
+                 name="summer_hp_hacf",
+                 remove_mean=True)
+
+#exit(0)
 #comm.Barrier()
 
+#winter_hp()
+#summer_hp()
+
+summer()
+#winter()
+#spring()
+#fall()

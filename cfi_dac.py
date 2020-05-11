@@ -97,13 +97,13 @@ def get_meas(meas_file="res/simone_nov2018_multilink_juha_30min_1000m.h5",
     if outlier_filter:
         dc2=n.linspace(0,1.0,num=100)
         plt.axvline(dcos_thresh)
-        ok_idx=n.where( ((n.abs(dops) < (n.abs(dcos2)*30+15))) & (dcos2 < dcos_thresh)  )[0]
+        ok_idx=n.where( ((n.abs(dops) < (n.abs(dcos2)*35+15))) & (dcos2 < dcos_thresh)  )[0]
         
     if plot_outlier_filter:
         
         plt.plot(dcos2,n.abs(dops),".")
         plt.plot(dcos2[ok_idx],n.abs(dops[ok_idx]),".")
-        plt.plot(dc2,30.0*dc2+15)
+        plt.plot(dc2,35.0*dc2+15)
         plt.show()
 
     
@@ -180,8 +180,8 @@ def cfi(m,
                                # s_x and s_y specify it.
         hour_of_day=0.0,    # hour of day
         dhour_of_day=48.0,  # length of a time bin
-        min_ds_h=5.0,
-        min_dt=30.0,
+        min_ds_h=0.0,
+        min_dt=5.0,
         plot_thist=False):
     '''
     Calculate various lags. Use tree-like sorting of measurements to reduce the time

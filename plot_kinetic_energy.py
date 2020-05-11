@@ -6,7 +6,7 @@ import h5py
 import glob
 
 
-fl=glob.glob("mpi/winter_small_ke/*.h5")
+fl=glob.glob("mpi/winter_large_ke/*.h5")
 fl.sort()
 
 h=h5py.File(fl[0],"r")
