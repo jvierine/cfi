@@ -5,6 +5,9 @@ import glob
 import h5py
 import matplotlib.pyplot as plt
 import cfi_config as c
+import time
+import datetime
+
 
 #alpha_norm               Dataset {56452}
 #braggs                   Dataset {56452, 3}
@@ -51,6 +54,13 @@ class mmaria_data:
     def get_bounds(self):
         return([n.min(self.mint),n.max(self.maxt)])
 
+    def read_data_date(self,d0,d1,read_all_detections=True):#is datetime.date(d0) valid to run a function, so can just put in 2019,1,1
+        #d0,d1 is a date like d0=datetime.date(2019,1,5)
+        
+        t0=time.mktime(d0.timetuple())
+        t1=time.mktime(d1.timetuple())
+        return(self.read_data(t0,t1,read_all_detections))
+        
     def read_data(self,t0,t1,read_all_detections=True):
         """
         Read all meteor radar network data between these times (unix)
@@ -86,7 +96,7 @@ class mmaria_data:
                 t = n.concatenate((t,h["t"].value[didx]))
                 alpha_norm = n.concatenate((alpha_norm,h["alpha_norm"].value[didx]))
                 braggs = n.concatenate((braggs,h["braggs"].value[didx,:]))
-
+        
                 dcos = n.concatenate((dcos,h["dcos"].value[didx,:]))
                 dh=h["dh"].value
                 dop_errs = n.concatenate((dop_errs,h["dop_errs"].value[didx]))
@@ -110,7 +120,7 @@ class mmaria_data:
         return({"t":t[idx],
                 "alpha_norm":alpha_norm[idx],
                 "braggs":braggs[idx,:],
-                "dcoss":dcos[idx,:],
+                "dcos":dcos[idx,:],
                 "dh":dh,
                 "dop_errs":dop_errs[idx],
                 "dops":dops[idx],
