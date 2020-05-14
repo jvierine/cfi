@@ -86,7 +86,8 @@ def avg_temporal_acfs(dcos_thresh=0.8,
                               dcos_thresh=dcos_thresh,
                               mean_wind_file=mw_fname,
                               data='mmaria')
-            os.system("rm %s"%(mw_fname))
+            if mean_rem:
+                os.system("rm %s"%(mw_fname))
             acfs,errs,tau,dtau,ds_h,names=cfi.temporal_acfs(meas,
                                                             h0=h0,
                                                             tau=tau,
@@ -107,18 +108,18 @@ def avg_temporal_acfs(dcos_thresh=0.8,
             ho.close()
 
 def summer_hp():
-    avg_temporal_acfs(dcos_thresh=0.8,
+    avg_temporal_acfs(dcos_thresh=0.7,
                       h0=90.0,
                       dh=2,
                       ds_h=50.0,
-                      dtau=300.0,
-                      tau=n.arange(0.0,12*3600,300.0),
+                      dtau=60.0,
+                      tau=n.arange(0.0,8*3600,60.0),
                       ds_z=1,
                       years=[2018,2019],
                       months=[5,6,7],
                       dstep=7,
                       mean_rem=True,
-                      name="summer_tacf_12_300_50km")
+                      name="summer_tacf_8_60_50km")
     
 
 #winter_small_scale()

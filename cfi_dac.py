@@ -17,6 +17,8 @@ import scipy.misc as sm
 import scipy.signal as ss
 import scipy.interpolate as si
 import scipy.optimize as sio
+import traceback
+import sys
 
 import geoid_const as gc
 
@@ -44,7 +46,7 @@ def vel(t,alt,lats,lons,times,rgs,v,dt,dh):
     hi[hi>(v.shape[2]-1)]=v.shape[2]-1
     ti[ti<0]=0
     ti[ti>(v.shape[1]-1)]=(v.shape[1]-1)
-    return(v[0,ti,hi],v[1,ti,hi])
+    return(v[0,ti,hi],v[1,ti,hi],v[2,ti,hi],v[3,ti,hi],v[4,ti,hi],v[5,ti,hi])
 
 # to use with mmaria file? h=mmaria_read().read_data(t0,t1) but .value doesnt work here, must change this script?
 def get_meas(meas_file="res/simone_nov2018_multilink_juha_30min_1000m.h5",
@@ -96,7 +98,7 @@ def get_meas(meas_file="res/simone_nov2018_multilink_juha_30min_1000m.h5",
     ok_idx=n.where(dcos2 < dcos_thresh)[0]    
     if outlier_filter:
         dc2=n.linspace(0,1.0,num=100)
-        plt.axvline(dcos_thresh)
+#        plt.axvline(dcos_thresh)
         ok_idx=n.where( ((n.abs(dops) < (n.abs(dcos2)*35+15))) & (dcos2 < dcos_thresh)  )[0]
         
     if plot_outlier_filter:
@@ -130,10 +132,19 @@ def get_meas(meas_file="res/simone_nov2018_multilink_juha_30min_1000m.h5",
         hm.close()
 
         # interpolate zonal and merid wind
-        vu,vv=vel(t,heights,lats,lons,times,rgs,v,dt,dh)
+        vu,vv,dudy,dvdy,dudx,dvdx=vel(t,heights,lats,lons,times,rgs,v,dt,dh)
+
+
+        mean_dops=vu*braggs[:,0]+vv*braggs[:,1]+\
+                   dudy*(lats-mlat0)*gc.latdeg2km*braggs[:,0]+\
+                   dvdy*(lats-mlat0)*gc.latdeg2km*braggs[:,1]+\
+                   dudx*(lons-mlon0)*gc.londeg2km*braggs[:,0]+\
+                   dvdx*(lons-mlon0)*gc.londeg2km*braggs[:,1]
+                    
         
         # residual vel after removing mean horizontal wind
-        dopsp = dops + (vu*braggs[:,0]+vv*braggs[:,1])/2.0/n.pi
+        # (negative sign in analysis)
+        dopsp = dops + mean_dops/2.0/n.pi
         stdev_est=n.nanmedian(n.abs(n.nanmean(dopsp)-dopsp))
         stdev_est2=n.nanmedian(n.abs(n.nanmean(dops)-dops))
         
@@ -182,6 +193,7 @@ def cfi(m,
         dhour_of_day=48.0,  # length of a time bin
         min_ds_h=0.0,
         min_dt=5.0,
+        debug_plot=False,
         plot_thist=False):
     '''
     Calculate various lags. Use tree-like sorting of measurements to reduce the time
@@ -197,7 +209,7 @@ def cfi(m,
     braggs=m["braggs"]
 
     # Figure out hour of day (UTC)
-    hod=n.mod(t/3600.0,24)
+    hod=n.mod(t/3600.0,24.0)
 
     # (idx_for_dimension_0, idx_for_dimension_1, ...)
     t_idx=n.where( (n.abs(hod-hour_of_day)<=(dhour_of_day/2.0)) | (n.abs(hod-24-hour_of_day)<=(dhour_of_day/2.0)) | (n.abs(hod+24-hour_of_day)<=(dhour_of_day/2.0)) )[0]
@@ -337,13 +349,32 @@ def cfi(m,
         
         # inverse scale weights
         resid=(mo-n.dot(Ao,xhat))
-        stdev=3.0*n.sqrt(n.mean(n.abs(resid)**2.0))
+        
+        mean_err=n.median(resid)
+        resid_std=n.median(n.abs(resid-mean_err))
+
+        if debug_plot:
+            plt.plot(resid,".")
+            plt.axhline(resid_std*5.0,color="red")
+            plt.axhline(-resid_std*5.0,color="red")
+            plt.show()
+            
+        # remove extreme outliers
+        good_idx=n.where(n.abs(resid_std-mean_err) < 4.0*resid_std)[0]
+
+        An=A[good_idx,:]
+        mn=m[good_idx]
+
+        xhat=n.linalg.lstsq(A,m)[0]
+        
+        stdev=n.sqrt(n.mean(n.abs(resid)**2.0))
         # assuming all measurements are independent
         sigma=n.sqrt(n.diag(n.linalg.inv(n.dot(n.transpose(Ao),Ao))))*stdev
         acf[:]=xhat
         err[:]=sigma
 
     except:
+        traceback.print_exc(file=sys.stdout)
         acf[:]=n.nan
         err[:]=n.nan
 

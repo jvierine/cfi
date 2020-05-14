@@ -12,13 +12,14 @@ import mean_wind_est as mw
 import glob
 
 
-#summer_hacf
-#winter_hacf
+#name="summer_hacf"
+#name="winter_hacf"
+name="summer_hp_hacf"
 
-fl=glob.glob("mpi/summer_hacf/hacf_res*.h5")
+fl=glob.glob("mpi/%s/*.h5"%(name))
 fl.sort()
 
-
+print(fl)
 h=h5py.File(fl[0],"r")
 acf=n.copy(h["acfs"].value)
 err=n.copy(h["errs"].value)
@@ -58,13 +59,14 @@ for i in range(len(s_h)):
         ws=0.0
         for mi in range(int(n_avg)):
             if n.sum(n.isnan(all_acfs[mi,i,ci]))== 0:
+
                 w=1.0/all_errs[mi,i,ci]
-                print(w)
+#                print(w)
                 ws+=w
                 acfs[i,ci]+=w*all_acfs[mi,i,ci]
             else:
                 print("nans")
-        print(ws)
+#        print(ws)
         acfs[i,ci]=(1.0/ws)*acfs[i,ci]
 
                     

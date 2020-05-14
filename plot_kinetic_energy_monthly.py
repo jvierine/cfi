@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 import h5py
 import glob
 
-alt=90.0
+alt=90
 
-run_name="large_ke"
+run_name="small_50km_ke"
 
-fl=glob.glob("mpi/00_%s/*.h5"%(run_name))
+fl=glob.glob("mpi/00.00_%s/*.h5"%(run_name))
 fl.sort()
 
 h=h5py.File(fl[0],"r")
@@ -24,39 +24,74 @@ h.close()
 
 hi=n.argmin(n.abs(alt-heights))
 
-uu=n.zeros([acfs.shape[1],12])
-vv=n.zeros([acfs.shape[1],12])
+
+dl=glob.glob("mpi/??.??_%s"%(run_name))
+dl.sort()
+print(dl)
+n_days=len(dl)
+
+uu=n.zeros([acfs.shape[1],n_days])
+vv=n.zeros([acfs.shape[1],n_days])
+
+
 tods=n.concatenate((tods,[24.0]))
-for mi in range(12):
-    fl=glob.glob("mpi/%02d_%s/*.h5"%(mi,run_name))
+for mi in range(n_days):
+    dirn=dl[mi]
+    fl=glob.glob("%s/*.h5"%(dirn))
     fl.sort()
     acfs[:,:,:]=0.0
     n_avg=0.0
     ws=n.zeros(errs.shape)
+    
     for f in fl:
         print(f)
         h=h5py.File(f,"r")
-        w=1.0/h["errs"].value
-        if n.sum(n.isnan(h["acfs"].value)) > 0:
-            ws+=w
-            acfs+=w*h["acfs"].value
+        gidx=n.where(n.isnan(h["acfs"].value)!=True)
+        w=n.zeros(errs.shape)    
+        #w[gidx]=1.0/h["errs"].value[gidx]
+        #ws[gidx]+=w[gidx]
+        #acfs[gidx]+=w[gidx]*h["acfs"].value[gidx]
+
+        w=1.0#n.zeros(errs.shape)    
+        ws+=w
+        acfs+=w*h["acfs"].value
         h.close()
         n_avg+=1.0
     acfs=acfs/ws
     uu[:,mi]=acfs[0,:,hi]
     vv[:,mi]=acfs[1,:,hi]
-    plt.pcolormesh(tods,heights,n.log10(n.transpose(acfs[1,:,:]+acfs[0,:,:])),vmin=0,vmax=4)
-    plt.colorbar()
-    plt.show()
+#    plt.pcolormesh(tods,heights,n.log10(n.transpose(acfs[1,:,:]+acfs[0,:,:])),vmin=0,vmax=4)
+ #   plt.colorbar()
+  #  plt.show()
 
-    
 
-plt.pcolormesh(tods,n.arange(13),n.transpose(uu),vmin=0,vmax=8000)
+months=n.linspace(0,12,num=n_days+1)
+
+plt.figure(figsize=(12,6))
+plt.subplot(131)
+plt.title("Meridional")
+plt.pcolormesh(tods,months,n.transpose(uu),vmin=0,vmax=6000)
 plt.colorbar()
+plt.xlabel("Hour of day (UTC)")
+plt.ylabel("Month of year")
+
+plt.subplot(132)
+plt.title("Zonal")
+plt.pcolormesh(tods,months,n.transpose(vv),vmin=0,vmax=6000)
+plt.colorbar()
+plt.xlabel("Hour of day (UTC)")
+plt.ylabel("Month of year")
+
+plt.subplot(133)
+plt.title("Total")
+plt.pcolormesh(tods,months,n.log10(n.transpose(vv+uu)),vmin=2,vmax=4)
+plt.colorbar()
+plt.xlabel("Hour of day (UTC)")
+plt.ylabel("Month of year")
+
 plt.show()
-plt.pcolormesh(tods,n.arange(13),n.transpose(vv),vmin=0,vmax=8000)
-plt.colorbar()
-plt.show()
-plt.pcolormesh(tods,n.arange(13),n.log10(n.transpose(vv+uu)),vmin=0,vmax=4)
-plt.colorbar()
+
+
+
+plt.pcolormesh(n.log10( vv+uu),vmin=2,vmax=4)
 plt.show()

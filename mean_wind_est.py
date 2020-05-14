@@ -13,58 +13,44 @@ import cfi_dac as cfi
 import cfi_config as c
 import time
 import datetime
+import stuffr
 
 import geoid_const as gc
+
+from mpi4py import MPI
+comm=MPI.COMM_WORLD
+size=comm.Get_size()
+rank=comm.Get_rank()
 
 latdeg2km=gc.latdeg2km #111.321
 londeg2km=gc.londeg2km# n.pi*6371.0*n.cos(n.pi*69.0/180.0)/180.0#65.122785 
 
-# high time resolution mean wind
-#t_avg=1800
-# low time resolution mean wind (used for high pass filtering)
-#lf_t_avg=4*3600.0
-#dcos_thresh=0.8
-#ofname="res/mean_wind_4h.h5"
-
-def mean_wind(meas="res/simone_nov2018_multilink_juha_30min_1000m.h5",
-              dt=60*60,t_step=900,dh=1.0,max_alt=105,min_alt=80,dcos_thresh=0.8,
-              ofname="res/mean_wind.h5",
-              data='h5file'):   #data is the type of input values.
+def mean_wind_grad(meas,
+                   times,
+                   dt=60*60,
+                   t_step=900,
+                   dh=1.0,
+                   max_alt=105,
+                   min_alt=80,
+                   dcos_thresh=0.8,
+                   ofname="res/mean_wind.h5",
+                   min_number_of_measurements=32,
+                   data='h5file'):  
     
-    if data=='h5file':
-        h=h5py.File(meas,"r")
-        print(h.keys())
-        heights=n.copy(h["heights"].value)
-        ts=n.copy(h["t"].value)
-        dops=n.copy(h["dops"].value)
-        braggs=n.copy(h["braggs"].value)
-        lats=n.copy(h["lats"].value)
-        if "dcos" in h.keys():
-            dcoss=n.copy(h["dcos"].value)
-        else:
-            dcoss=n.zeros([len(heights),2])
-        
-        lons=n.copy(h["lons"].value)
+    h=meas
+    heights=n.copy(h["heights"])
+    heights=heights/1000
+    ts=n.copy(h["t"])
+    dops=n.copy(h["dops"])
+    braggs=n.copy(h["braggs"])
+    lats=n.copy(h["lats"])
+    lons=n.copy(h["lons"])
+    dcoss=n.copy(h["dcos"])
     
-    else:   #for now only for mmaria_read.py
-        h=meas
-        heights=n.copy(h["heights"])
-        heights=heights/1000
-        ts=n.copy(h["t"])
-        dops=n.copy(h["dops"])
-        braggs=n.copy(h["braggs"])
-        lats=n.copy(h["lats"])
-        if "dcos" in h.keys():
-            dcoss=n.copy(h["dcos"])
-        else:
-            dcoss=n.zeros([len(heights),2])
-        
-        lons=n.copy(h["lons"])
-        
-        
-        
+    # 1d direction cosine
     dcos2=n.sqrt(dcoss[:,0]**2.0+dcoss[:,1]**2.0)
-    
+
+    # filter by direction cosine
     ok_idx=n.where(dcos2 < dcos_thresh)[0]
     ts=ts[ok_idx]
     lats=lats[ok_idx]
@@ -78,82 +64,102 @@ def mean_wind(meas="res/simone_nov2018_multilink_juha_30min_1000m.h5",
     lon0=n.median(lons)
     
     rgs=n.arange(min_alt,max_alt,int(dh))
-    times=n.arange(int(n.min(ts)),int(n.max(ts)),t_step)
+
+#    times=n.arange(int(n.min(ts)),int(n.max(ts)),t_step)
     n_rgs=len(rgs)
     
-    np=2
-    
-    v=n.zeros([np,len(times),len(rgs)])
-    ve=n.zeros([np,len(times),len(rgs)])
+    # six unknowns: zonal and meridional mean wind, and their zonal and meridional gradients
+    n_par=6
+    v=n.zeros([n_par,len(times),len(rgs)])
+    ve=n.zeros([n_par,len(times),len(rgs)])
+
+    # initialize with nan
     ve[:,:,:]=n.nan
     v[:,:,:]=n.nan
 
+    # these measurements are good
+    good_meas_idx = n.array([],dtype=n.int)
+    bad_meas_idx = n.array([],dtype=n.int)
+    
+    # for each time step
     for ti,t in enumerate(times):
         print("%d/%d"%(ti,len(times)))
         ridxs=[]
-        n_r=[]
+
+        # find all measurements that are at the same height and time bin
         for r in rgs:
-            hidx=n.where((heights > r)&(heights < (r+dh))&(ts>t-dt/2)&(ts<(t+dt/2)))[0]
+            hidx=n.where((heights > r)&(heights < (r+dh))&(ts> (t-dt/2))&(ts<(t+dt/2)))[0]
             ridxs.append(hidx)
-            n_r.append(len(hidx))
-            
-        n_r=n.array(n_r)
-        n_meas=n.sum(n_r)
-        # v_x = v_x
-        # v_y = v_y
-        A=n.zeros([n_meas,np*n_rgs])
-        m=n.zeros(n_meas)
-        n_m = 0
-        g_ridx2=[]
-        g_ridx=[]
-        
+
+        # for each height interval
         for ri in range(len(rgs)):
-            m_idx=n.arange(n_m,n_m+len(ridxs[ri]))
-            # meas
-            m[m_idx]=-2.0*n.pi*dops[ridxs[ri]]
-            # theory
-            # v_u
-            A[m_idx,ri*np+0]=braggs[ridxs[ri],0]
-            # v_v
-            A[m_idx,ri*np+1]=braggs[ridxs[ri],1]
-        
-            n_m+=len(ridxs[ri])
-            if len(ridxs[ri]) > 10:
-                for pi in range(np):
-                    g_ridx2.append(ri*np+pi)
-                g_ridx.append(ri)
-            else:
-                pass
-#                print("bad range %d"%(ri))
-        g_ridx2=n.array(g_ridx2)
-        g_ridx=n.array(g_ridx)
-    
-        if len(g_ridx2) > 0:
-            xhat=n.linalg.lstsq(A[:,g_ridx2],m)[0]
-            resid=m-n.dot(A[:,g_ridx2],xhat)
-            gidx=n.where(n.abs(resid) < 100.0)[0]
-            #        plt.plot(resid)
-            #       plt.show()
+            # ridxs[ri] are indices for measurements that are at this height
+            n_meas=len(ridxs[ri])
+            if n_meas > min_number_of_measurements:
+                A=n.zeros([n_meas,n_par])
             
-            g_ridx_f=[]
-            g_ridx2_f=[]        
-            for ri in g_ridx:
-                n_meas_per_rg=len(n.where(n.abs(A[:,np*ri])>0)[0])
-                if n_meas_per_rg > np:
-                    g_ridx_f.append(ri)                
-                for pi in range(np):
-                    g_ridx2_f.append(np*ri+pi)
+                # meas
+                m=-2.0*n.pi*dops[ridxs[ri]]
+                # theory
+                #
+                # v_dop = k \dot (v_0 + (lat-lat0)*v')
+                #
+                # mean winds
+                # v_u
+                A[:,0]=braggs[ridxs[ri],0]
+                # v_v
+                A[:,1]=braggs[ridxs[ri],1]
+                #
+                # gradients (how much does velocity change per kilometer
+                # in the zonal and meridional directions
+                #
+                # zon lat grad
+                A[:,2]=braggs[ridxs[ri],0]*(lats[ridxs[ri]]-lat0)*gc.latdeg2km
+                # mer lat grad
+                A[:,3]=braggs[ridxs[ri],1]*(lats[ridxs[ri]]-lat0)*gc.latdeg2km
+                # zon lon grad
+                A[:,4]=braggs[ridxs[ri],0]*(lons[ridxs[ri]]-lon0)*gc.londeg2km
+                # mer lon grad
+                A[:,5]=braggs[ridxs[ri],1]*(lons[ridxs[ri]]-lon0)*gc.londeg2km
 
-            g_ridx_f=n.array(g_ridx_f,dtype=n.int)
-            g_ridx2_f=n.array(g_ridx2_f,dtype=n.int)
+                borked=False
+                try:
+                    xhat=n.linalg.lstsq(A,m)[0]
+                except:
+                    borked=True
 
-            # estimate stdev
-            stdev=n.sqrt(n.diag(n.linalg.inv(n.dot(n.transpose(A[:,g_ridx2_f]),A[:,g_ridx2_f]))))*n.std(resid)
+                resid=m-n.dot(A,xhat)
+                resid_std=n.median(n.abs(resid))
 
-            n_gridx=len(g_ridx_f)
-            for pi in range(np):
-                v[pi,ti,g_ridx_f]=xhat[np*n.arange(n_gridx)+pi]
-                ve[pi,ti,g_ridx_f]=stdev[np*n.arange(n_gridx)+pi]
+                # good measurements
+                gidx=n.where(n.abs(resid) < 4.0*resid_std)[0]
+                bidx=n.where(n.abs(resid) > 4.0*resid_std)[0]
+#                print("using %d/%d measurements"%(len(gidx),len(ridxs[ri])))
+
+                good_meas_idx=n.concatenate((good_meas_idx,ridxs[ri][gidx]))
+                bad_meas_idx=n.concatenate((bad_meas_idx,ridxs[ri][bidx]))
+
+                # one more iteration with outliers removed
+                if len(gidx) > min_number_of_measurements:
+                    A=A[gidx,:]
+                    m=m[gidx]
+
+                    try:
+                        xhat2=n.linalg.lstsq(A,m)[0]
+                    except:
+                        borked=True
+
+
+                    # estimate stdev
+                    try:
+                        stdev=n.sqrt(n.diag(n.linalg.inv(n.dot(n.transpose(A),A))))*resid_std
+                    except:
+                        borked=True
+
+                    if not borked:
+                        for pi in range(n_par):
+                            v[pi,ti,ri]=xhat2[pi]
+                            ve[pi,ti,ri]=stdev[pi]
 
     times_h=(times-times[0])/3600.0
     dt2=times[1]-times[0]
@@ -163,81 +169,105 @@ def mean_wind(meas="res/simone_nov2018_multilink_juha_30min_1000m.h5",
     ho["times"]=times
     ho["rgs"]=rgs
     ho["v"]=v
-    #ho["v_fluct"]=v2-v
     ho["ve"]=ve
     ho["dt"]=dt2
     ho["dh"]=dh2
     ho["lat0"]=lat0
     ho["lon0"]=lon0
+    ho["latdeg2km"]=gc.latdeg2km
+    ho["londeg2km"]=gc.londeg2km
+    ho["good_meas_idx"]=good_meas_idx
+    ho["bad_meas_idx"]=bad_meas_idx
+    # fraction of bad measurements
+    ho["quality"]=float(len(good_meas_idx))/float(len(good_meas_idx)+len(bad_meas_idx))
     ho.close()
-
     
     return(times,times_h,v,ve,rgs,lat0,lon0,dt2,dh2)
 
+def plot_wind(md,
+              t0,
+              t1,
+              odir="/mnt/data/juha/mmaria_norway/mean_wind",
+              dt=900.0,
+              avg_time=3600*4):
+    
+    d=md.read_data(t0=t0-avg_time,t1=t1+avg_time)
 
-if __name__ == "__main__":
+    n_times=int(n.round((t1-t0)/dt))
+    print(n_times)
+    times=n.arange(n_times)*dt+t0
 
+    dcos_thresh=0.8
+    times,times_h,v,ve,rgs,lat0,lon0,dt,dh=mean_wind_grad(meas=d,
+                                                          times=times,
+                                                          dt=avg_time,
+                                                          dh=1.0,
+                                                          max_alt=105,
+                                                          min_alt=78,
+                                                          ofname="%s/mean_wind-%d.h5"%(odir,t0),
+                                                          dcos_thresh=dcos_thresh)
+    v_max=100.0
+    dv_max=0.5
+    
+    plt.figure(figsize=(8,8))
+    plt.subplot(321)
+    plt.pcolormesh(times_h,rgs,n.transpose(v[0,:,:]),vmin=-v_max,vmax=v_max,cmap="jet")
+    plt.title("Zonal mean wind $\overline{u}$ (m/s)")
+    plt.xlabel("Time (h)")
+    plt.ylabel("Height")
+    plt.colorbar()
+    plt.subplot(322)
+    plt.pcolormesh(times_h,rgs,n.transpose(v[1,:,:]),vmin=-v_max,vmax=v_max,cmap="jet")
+    plt.title("Meridional mean wind $\overline{v}$ (m/s)")
+    plt.xlabel("Time (h)")
+    plt.ylabel("Height")
+    plt.colorbar()
+    plt.subplot(323)
+    plt.pcolormesh(times_h,rgs,n.transpose(v[2,:,:]),vmin=-dv_max,vmax=dv_max,cmap="jet")
+    plt.title("$d\overline{u}/dy$ (m/s/km)")
+    plt.xlabel("Time (h)")
+    plt.ylabel("Height")
+    plt.colorbar()
+    plt.subplot(324)
+
+    plt.pcolormesh(times_h,rgs,n.transpose(v[3,:,:]),vmin=-dv_max,vmax=dv_max,cmap="jet")
+    plt.title("$d\overline{v}/dy$ (m/s/km)")
+    plt.xlabel("Time (h)")
+    plt.ylabel("Height")
+    plt.colorbar()
+    plt.subplot(325)
+    plt.pcolormesh(times_h,rgs,n.transpose(v[4,:,:]),vmin=-dv_max,vmax=dv_max,cmap="jet")
+    plt.title("$d\overline{u}/dx$ (m/s/km)")
+    plt.xlabel("Time (h)")
+    plt.ylabel("Height")
+
+    plt.colorbar()
+    plt.subplot(326)
+    plt.pcolormesh(times_h,rgs,n.transpose(v[5,:,:]),vmin=-dv_max,vmax=dv_max,cmap="jet")
+    plt.title("$d\overline{v}/dx$ (m/s/km)")
+    plt.xlabel("Time (h)")
+    plt.ylabel("Height")    
+
+    plt.colorbar()
+    plt.tight_layout()
+    plt.savefig("%s/mean_%d.png"%(odir,t0))
+    plt.clf()
+    plt.close()
+
+def plot_all():
     md=mr.mmaria_data(c.data_directory)#for many files in a directory
     b=md.get_bounds()
-
-    d=md.read_data_date(d0=datetime.date(2019,1,5),d1=datetime.date(2019,1,9))
-
-    lf_t_avg=4*3600
-    t_avg=900.0
-    times,times_h,v,ve,rgs,lat0,lon0,dt,dh=mean_wind(meas=d, dt=lf_t_avg,dh=1.0,max_alt=105,min_alt=78,dcos_thresh=dcos_thresh,data='dict')
-    #times,times_h,v,ve,rgs,lat0,lon0,dt,dh=mean_wind(dt=1800,dh=1.0,max_alt=105,min_alt=78,dcos_thresh=0.8)
-    times2,times_h2,v2,ve2,rgs2,lat02,lon02,dt2,dh2=mean_wind(meas=d, dt=t_avg,dh=1.0,max_alt=105,min_alt=78,dcos_thresh=dcos_thresh,data='dict')
-
-    print(dh)
-
-
-    plt.figure(figsize=(8,8))
-
-    plt.subplot(322)
-    plt.pcolormesh(times_h,rgs,n.transpose(v2[0,:,:]),vmin=-70,vmax=70,cmap="jet")
-    plt.title("Zonal mean wind (m/s)")
-    #plt.xlabel("Time (h)")
-    plt.ylabel("%d minute average"%(t_avg/60.0))
-    plt.colorbar()
-
-    plt.subplot(321)
-    plt.pcolormesh(times_h,rgs,n.transpose(v2[1,:,:]),vmin=-70,vmax=70,cmap="jet")
-    plt.title("Meridional mean wind (m/s)")
-    #plt.xlabel("Time (h)")
-    plt.ylabel("Altitude (km)")
-    plt.colorbar()
-
-    plt.subplot(324)
-    plt.pcolormesh(times_h,rgs,n.transpose(v[0,:,:]),vmin=-70,vmax=70,cmap="jet")
-    #plt.title("Zonal mean wind (m/s)")
-    #plt.xlabel("Time (h)")
-    plt.ylabel("4 hour average")
-    plt.colorbar()
-
-    plt.subplot(323)
-    plt.pcolormesh(times_h,rgs,n.transpose(v[1,:,:]),vmin=-70,vmax=70,cmap="jet")
-    #plt.title("Meridional mean wind (m/s)")
-    #plt.xlabel("Time (h)")
-    plt.ylabel("Altitude (km)")
-    plt.colorbar()
-
-    plt.subplot(326)
-    plt.pcolormesh(times_h,rgs,n.transpose(v2[0,:,:]-v[0,:,:]),vmin=-25,vmax=25,cmap="jet")
-    #plt.title("Zonal mean wind (m/s)")
-    plt.xlabel("Time (h)")
-    plt.ylabel("Residual")
-    plt.colorbar()
-
-    plt.subplot(325)
-    plt.pcolormesh(times_h,rgs,n.transpose(v2[1,:,:]-v[1,:,:]),vmin=-25,vmax=25,cmap="jet")
-    #plt.title("Meridional mean wind (m/s)")
-    plt.xlabel("Time (h)")
-    #plt.ylabel("Residual")
-    plt.ylabel("Altitude (km)")
-    plt.colorbar()
-
-    plt.tight_layout()
-    plt.savefig("mean_wind.png")
-    plt.show()
     
+    n_days=int(n.round((b[1]-b[0])/(24*3600)))
+    
+    bt0=int(n.round(b[0]/(24*3600)))*24*3600
+    
+    for di in range(rank,n_days,size):
+        plot_wind(md,
+                  t0=bt0+24*3600*di,
+                  t1=bt0+24*3600*(di+1),
+                  odir="/mnt/data/juha/mmaria_norway/mean_wind",
+                  avg_time=3600*4)
 
+if __name__ == "__main__":
+    plot_all()

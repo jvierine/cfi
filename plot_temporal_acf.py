@@ -3,10 +3,15 @@
 import numpy as n
 import matplotlib.pyplot as plt
 import glob
+import scipy.signal as ss
 import h5py
-name="summer_tacf_7_1800_25km"
-#name="winter_tacf_7_1800_25km"
+#name="summer_tacf_7_1800_25km"
+#name="summer_tacf_7_900_50km"
+name="summer_tacf_12_300_50km"
+#name="winter_tacf_7_900_50km"
 #name="apr_tacf_7_1800_25km"
+#name="summer_tacf_1_300_100km"
+#name="winter_tacf_2_300_50km"
 #name="summer_tacf_7_3600_500km"
 #name="summer_tacf_1_120_50km"
 fl=glob.glob("mpi/%s/*.h5"%(name))
@@ -49,6 +54,7 @@ for f in fl:
     h.close()
 print(ws)
 acfs=acfs/ws
+wf=ss.hann(len(tau)*2)[len(tau):(2*len(tau))]
 plt.subplot(131)
 plt.plot(tau,acfs[:,0])
 plt.plot(tau,acfs[:,1])
@@ -57,8 +63,11 @@ plt.ylabel("Correlation function (m$^2$/s$^2$)")
 
 plt.subplot(132)
 
-Suu=n.fft.hfft(acfs[:,0])
-Svv=n.fft.hfft(acfs[:,1])
+
+
+
+Suu=n.fft.hfft(wf*acfs[:,0])
+Svv=n.fft.hfft(wf*acfs[:,1])
 
 dt=n.diff(tau)[0]
 f=n.fft.fftfreq(len(Suu),d=dt)

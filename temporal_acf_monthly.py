@@ -31,8 +31,6 @@ def avg_temporal_acfs(dcos_thresh=0.8,
                       ds_z=1,
                       years=[2018,2019,2020],
                       months=[5,6,7],
-                      dstep=4,
-                      mean_rem=True,
                       name="summer_tacf"):
     if rank == 0:
 #        os.system("rm mpi/%s/tacf_res*.h5"%(name))
@@ -46,9 +44,7 @@ def avg_temporal_acfs(dcos_thresh=0.8,
     pars=[]
     for year in years:
         for month in months:
-#            dstep=n.max([1,int(n.floor(0.5*max_lag/(24*3600.0)))])
-            for day in n.arange(1,31,dstep):
-                pars.append([year,month,int(day)])
+            pars.append([year,month,1])
 
             
     n_pars=len(pars)
@@ -61,32 +57,17 @@ def avg_temporal_acfs(dcos_thresh=0.8,
         d0=datetime.date(year,month,day)
         t0=time.mktime(d0.timetuple())
     
-        d=md.read_data(t0=t0,t1=t0+max_lag+dstep*24*3600)
+        d=md.read_data(t0=t0,t1=t0+max_lag+31*24*3600)
         n_meas=len(d["t"])
         print("n_meteors %d"%(n_meas))
         if n_meas > 100:
-
-            if mean_rem:
-                mw_fname="res/mw-%1.6f.h5"%(n.random.rand(1))
-                n_mw_t=int(n.ceil((max_lag+dstep*24*3600)/900.0))
-                mw.mean_wind_grad(d,
-                                  times=n.linspace(t0,t0+max_lag+dstep*24*3600,num=n_mw_t),
-                                  dt=4*3600.0,
-                                  t_step=900,
-                                  dh=1.0,
-                                  max_alt=105,
-                                  min_alt=80,
-                                  dcos_thresh=0.8,
-                                  ofname=mw_fname,
-                                  min_number_of_measurements=32)
-
             meas=cfi.get_meas(meas_file=d,
-                              mean_rem=mean_rem,
+                              mean_rem=False,
                               plot_dops=False,
                               dcos_thresh=dcos_thresh,
-                              mean_wind_file=mw_fname,
+                              mean_wind_file="res/tmp.h5",
                               data='mmaria')
-            os.system("rm %s"%(mw_fname))
+                    
             acfs,errs,tau,dtau,ds_h,names=cfi.temporal_acfs(meas,
                                                             h0=h0,
                                                             tau=tau,
@@ -106,20 +87,43 @@ def avg_temporal_acfs(dcos_thresh=0.8,
             ho["dh"]=dh
             ho.close()
 
-def summer_hp():
+def summer_day():
     avg_temporal_acfs(dcos_thresh=0.8,
                       h0=90.0,
                       dh=2,
                       ds_h=50.0,
-                      dtau=300.0,
-                      tau=n.arange(0.0,12*3600,300.0),
+                      dtau=100.0,
+                      tau=n.arange(0.0,24*3600,100.0),
                       ds_z=1,
                       years=[2018,2019],
                       months=[5,6,7],
-                      dstep=7,
-                      mean_rem=True,
-                      name="summer_tacf_12_300_50km")
+                      dstep=2,
+                      name="summer_tacf_1_120_50km")
+    
+def summer_small_scale():
+    avg_temporal_acfs(dcos_thresh=0.8,
+                      h0=90.0,
+                      dh=2,
+                      ds_h=50.0,
+                      dtau=900.0,
+                      tau=n.arange(0.0,7*24*3600,900.0),
+                      ds_z=1,
+                      years=[2018,2019],
+                      months=[5,6,7],
+                      name="summer_tacf_7_900_50km")
+    
+def winter_small_scale():
+    avg_temporal_acfs(dcos_thresh=0.8,
+                      h0=90.0,
+                      dh=2,
+                      ds_h=50.0,
+                      dtau=900.0,
+                      tau=n.arange(0.0,7*24*3600,900.0),
+                      ds_z=1,
+                      years=[2018,2019,2020],
+                      months=[11,12,1],
+                      name="winter_tacf_7_900_50km")
     
 
-#winter_small_scale()
-summer_hp()
+winter_small_scale()
+#summer_small_scale()
