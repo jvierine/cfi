@@ -11,10 +11,9 @@ import cfi_config as c
 import mean_wind_est as mw
 import glob
 
-
-#name="summer_hacf"
+name="summer_hacf"
 #name="winter_hacf"
-name="summer_hp_hacf"
+#name="summer_hp_hacf"
 
 fl=glob.glob("mpi/%s/*.h5"%(name))
 fl.sort()

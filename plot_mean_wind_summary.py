@@ -6,8 +6,7 @@ import matplotlib.pyplot as plt
 import h5py
 import scipy.signal as ss
 
-h0=90
-
+h0=95
 fl=glob.glob("/mnt/data/juha/mmaria_norway/mean_wind/*.h5")
 fl.sort()
 h=h5py.File(fl[0],"r")
@@ -31,6 +30,8 @@ dudx=n.array([])
 dudy=n.array([])
 dvdx=n.array([])
 dvdy=n.array([])
+vort=n.array([])
+hdiv=n.array([])
 q=[]
 for di in range(n_days):
     h=h5py.File(fl[di],"r")
@@ -42,6 +43,15 @@ for di in range(n_days):
     dudx=n.concatenate((dudx,h["v"].value[4,:,hi]))
     dvdx=n.concatenate((dvdx,h["v"].value[5,:,hi]))
 
+    dudyp=h["v"].value[2,:,hi]
+    dvdxp=h["v"].value[5,:,hi]
+    vort=n.concatenate((vort, -dudyp+dvdxp))
+    
+    dudxp=h["v"].value[4,:,hi]
+    dvdyp=h["v"].value[3,:,hi]
+    hdiv=n.concatenate((hdiv,dudxp+dvdyp))
+    
+
     V[:,di]=h["v"].value[1,:,hi]
 
 u[n.isnan(u)]=0.0
@@ -50,9 +60,17 @@ dudx[n.isnan(dudx)]=0.0
 dudy[n.isnan(dudy)]=0.0
 dvdx[n.isnan(dvdx)]=0.0
 dvdy[n.isnan(dvdy)]=0.0
+vort[n.isnan(vort)]=0.0
+hdiv[n.isnan(hdiv)]=0.0
+
+#vort=n.real(n.fft.ifft(n.fft.fft(n.repeat(1.0/4.0,4.0),len(vort))*n.fft.fft(vort)))
+#hdiv=n.real(n.fft.ifft(n.fft.fft(n.repeat(1.0/4.0,4.0),len(vort))*n.fft.fft(hdiv)))
 
 f=n.fft.fftshift(n.fft.fftfreq(len(u),d=900.0))
 
+def filterlp(x,L):
+    return(n.real(n.fft.ifft(n.fft.fft(n.repeat(1.0/float(L),L),len(x))*n.fft.fft(x))))
+    
 plt.subplot(321)
 
 plt.axvline(1.0/(24*3600),color="gray")
@@ -60,7 +78,7 @@ plt.axvline(1.0/(12*3600),color="gray")
 plt.axvline(1.0/(8*3600),color="gray")
 plt.axvline(1.0/(27.32*24*3600),color="gray")
 plt.axvline(1.0/(365*24*3600),color="gray")
-plt.loglog(n.abs(f),n.abs(n.fft.fftshift(n.fft.fft(u)))**2.0,color="red")
+plt.loglog(n.abs(f),filterlp(n.abs(n.fft.fftshift(n.fft.fft(u)))**2.0,10),color="red")
 #plt.loglog(n.abs(f),n.abs(f)**(-3))
 #plt.loglog(n.abs(f),n.abs(f)**(-5/3.0))
 plt.subplot(322)
@@ -69,21 +87,23 @@ plt.axvline(1.0/(12*3600),color="gray")
 plt.axvline(1.0/(8*3600),color="gray")
 plt.axvline(1.0/(27.32*24*3600),color="gray")
 plt.axvline(1.0/(365*24*3600),color="gray")
-plt.loglog(n.abs(f),n.abs(n.fft.fftshift(n.fft.fft(v)))**2.0,color="red")
+plt.loglog(n.abs(f),filterlp(n.abs(n.fft.fftshift(n.fft.fft(v)))**2.0,10),color="red")
 plt.subplot(323)
 plt.axvline(1.0/(24*3600),color="gray")
 plt.axvline(1.0/(12*3600),color="gray")
 plt.axvline(1.0/(8*3600),color="gray")
+plt.axvline(1.0/(6*3600),color="gray")
 plt.axvline(1.0/(27.32*24*3600),color="gray")
 plt.axvline(1.0/(365*24*3600),color="gray")
-plt.loglog(n.abs(f),n.abs(n.fft.fftshift(n.fft.fft(dudx)))**2.0,color="red")
+plt.loglog(n.abs(f),filterlp(n.abs(n.fft.fftshift(n.fft.fft(vort)))**2.0,10),color="red")
 plt.subplot(324)
 plt.axvline(1.0/(24*3600),color="gray")
 plt.axvline(1.0/(12*3600),color="gray")
 plt.axvline(1.0/(8*3600),color="gray")
+plt.axvline(1.0/(6*3600),color="gray")
 plt.axvline(1.0/(27.32*24*3600),color="gray")
 plt.axvline(1.0/(365*24*3600),color="gray")
-plt.loglog(n.abs(f),n.abs(n.fft.fftshift(n.fft.fft(dudy)))**2.0,color="red")
+plt.loglog(n.abs(f),filterlp(n.abs(n.fft.fftshift(n.fft.fft(hdiv)))**2.0,10),color="red")
 plt.subplot(325)
 plt.axvline(1.0/(24*3600),color="gray")
 plt.axvline(1.0/(12*3600),color="gray")

@@ -4,48 +4,92 @@ import glob
 import numpy as n
 import matplotlib.pyplot as plt
 import h5py
-name="summer_2d_mer_zon"
+import cfi_dac as cfi
+
+name="summer_mer_zon_100km_900s"
+#name="summer_mer_zon_50km_900s"
+
+#name="winter_mer_zon_100km_900s"
+
+lag_name="Meridional lag (km)"
+lag_name2="Zonal lag (km)"
 fl=glob.glob("mpi/%s/*.h5"%(name))
 fl.sort()
+print(fl)
 h=h5py.File(fl[0],"r")
-acfs=n.copy(h["acfs"].value)
-errs=n.copy(h["errs"].value)
 s_x=n.copy(h["s_x"].value)
 s_y=n.copy(h["s_y"].value)
-acfs[:,:,:]=0.0
-errs[:,:,:]=0.0
-ws=n.copy(acfs)
+dtau=n.copy(h["dtau"].value)
+ds_x=n.copy(h["ds_x"].value)
+
+acfs=n.zeros([6,len(s_x),len(s_y)])
+ws=n.zeros([6,len(s_x),len(s_y)])
 h.close()
 n_avg=0.0
 for f in fl:
     print(f)
     h=h5py.File(f,"r")
-    if "acfs" in h.keys():
-        w=1.0/h["errs"].value
-        acfs+=w*h["acfs"].value
-        ws+=w
-        n_avg+=1.0
+    if "acf" in h.keys():
+        if n.sum(n.isnan(h["acf"].value)) == 0:
+            # print(h["err"].value)
+            w=1.0/h["err"].value
+            xi=h["xi"].value
+            yi=h["yi"].value
+            acfs[:,xi,yi]+=w*h["acf"].value
+            ws[:,xi,yi]+=w
     h.close()
 acfs=acfs/ws
-plt.pcolormesh(s_x,s_y,acfs[0,:,:],vmin=0,vmax=1000)
-plt.title("Zonal wind")
-plt.xlabel("Zonal distance (km)")
-plt.ylabel("Meridional distance (km)")
+print(s_x)
+dx=s_x[1]-s_x[0]
+xx=n.concatenate((s_x-dx/2,[n.max(s_x)+dx/2.0]))
+yy=n.concatenate((s_y-dx/2,[n.max(s_y)+dx/2.0]))
+print(xx)
+
+
+plt.figure(figsize=(8,8))
+plt.subplot(321)
+
+#acfs[0,4,0]=0.0
+
+plt.pcolormesh(xx,yy,acfs[0,:,:],vmin=-0.2e3,vmax=1.5e3)
+plt.title(cfi.cf_names[0])
+plt.xlabel(lag_name2)
+plt.ylabel(lag_name)
 plt.colorbar()
-plt.show()
+plt.subplot(322)
 
-plt.pcolormesh(s_x,s_y,acfs[1,:,:],vmin=0,vmax=1000)
-plt.title("Meridional wind")
-plt.xlabel("Zonal distance (km)")
-plt.ylabel("Meridional distance (km)")
-
+plt.pcolormesh(xx,yy,acfs[1,:,:],vmin=-0.2e3,vmax=1.5e3)
+plt.title(cfi.cf_names[1])
+plt.xlabel(lag_name2)
+plt.ylabel(lag_name)
 plt.colorbar()
-plt.show()
+plt.subplot(323)
 
-plt.pcolormesh(s_x,s_y,acfs[2,:,:],vmin=-200,vmax=200)
-plt.title("$C_{uv}$")
-plt.xlabel("Zonal distance (km)")
-plt.ylabel("Meridional distance (km)")
-
+plt.pcolormesh(xx,yy,acfs[2,:,:],vmin=-100,vmax=100)
+plt.title(cfi.cf_names[2])
+plt.xlabel(lag_name2)
+plt.ylabel(lag_name)
 plt.colorbar()
+
+plt.subplot(324)
+plt.pcolormesh(xx,yy,acfs[3,:,:],vmin=-200,vmax=200)
+plt.title(cfi.cf_names[3])
+plt.xlabel(lag_name2)
+plt.ylabel(lag_name)
+plt.colorbar()
+
+plt.subplot(325)
+plt.pcolormesh(xx,yy,acfs[2,:,:],vmin=-100,vmax=100)
+plt.title(cfi.cf_names[4])
+plt.xlabel(lag_name2)
+plt.ylabel(lag_name)
+plt.colorbar()
+
+plt.subplot(326)
+plt.pcolormesh(xx,yy,acfs[2,:,:],vmin=-100,vmax=100)
+plt.title(cfi.cf_names[5])
+plt.xlabel(lag_name2)
+plt.ylabel(lag_name)
+plt.colorbar()
+plt.tight_layout()
 plt.show()

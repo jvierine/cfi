@@ -61,7 +61,12 @@ class mmaria_data:
         t1=time.mktime(d1.timetuple())
         return(self.read_data(t0,t1,read_all_detections))
         
-    def read_data(self,t0,t1,read_all_detections=True):
+    def read_data(self,
+                  t0,
+                  t1,
+                  h0=0,
+                  h1=150,
+                  read_all_detections=True):
         """
         Read all meteor radar network data between these times (unix)
         """
@@ -92,7 +97,11 @@ class mmaria_data:
 #            print(i)
             h=h5py.File(self.fl[i],"r")
             if read_all_detections:
-                didx=n.where( ((h["t"].value) > t0) & ((h["t"].value) < t1))[0]
+                didx=n.where( ((h["t"].value) > t0) &
+                              ((h["t"].value) < t1) &
+                              (h["heights"].value/1e3 > h0) &
+                              (h["heights"].value/1e3 < h1) )[0]
+                
                 t = n.concatenate((t,h["t"].value[didx]))
                 alpha_norm = n.concatenate((alpha_norm,h["alpha_norm"].value[didx]))
                 braggs = n.concatenate((braggs,h["braggs"].value[didx,:]))

@@ -33,6 +33,9 @@ n.set_printoptions(precision=3)
 latdeg2km=gc.latdeg2km#111.321
 londeg2km=gc.londeg2km#65.122785
 
+cf_names=["$G_{uu}$","$G_{vv}$","$G_{ww}$",
+          "$G_{uv}$","$G_{uw}$","$G_{vw}$"]
+
 sf_names=["uu","vv","ww","uv","uw","vw"]
 # end constants
 
@@ -83,7 +86,7 @@ def get_meas(meas_file="res/simone_nov2018_multilink_juha_30min_1000m.h5",
         lats=n.copy(h["lats"])
         lons=n.copy(h["lons"])
         heights=n.copy(h["heights"])
-        heights=heights/1000
+        heights=heights/1000.0
         braggs=n.copy(h["braggs"])
         dops=n.copy(h["dops"])
 
@@ -133,8 +136,8 @@ def get_meas(meas_file="res/simone_nov2018_multilink_juha_30min_1000m.h5",
 
         # interpolate zonal and merid wind
         vu,vv,dudy,dvdy,dudx,dvdx=vel(t,heights,lats,lons,times,rgs,v,dt,dh)
-
-
+        
+        # don't remove gradients
         mean_dops=vu*braggs[:,0]+vv*braggs[:,1]+\
                    dudy*(lats-mlat0)*gc.latdeg2km*braggs[:,0]+\
                    dvdy*(lats-mlat0)*gc.latdeg2km*braggs[:,1]+\
@@ -213,6 +216,7 @@ def cfi(m,
 
     # (idx_for_dimension_0, idx_for_dimension_1, ...)
     t_idx=n.where( (n.abs(hod-hour_of_day)<=(dhour_of_day/2.0)) | (n.abs(hod-24-hour_of_day)<=(dhour_of_day/2.0)) | (n.abs(hod+24-hour_of_day)<=(dhour_of_day/2.0)) )[0]
+    
     # select only the subset of measurements
     t=t[t_idx]
     heights=heights[t_idx]
@@ -244,11 +248,11 @@ def cfi(m,
         if i == (n_times-1):
             it1=n.max(t)
         else:
-            it1=i*dtau+2*dtau+t0
+            it1=i*dtau+t0+2*dtau
 
         # filter heights
-        idx0=n.where( (heights > (h0-dh*0.5)) & (heights < (h0+dh*0.5)) & (t>it0) &(t< it1) )[0]
-        idx1=n.where( (heights > (h0+s_z-0.5*dh)) & (heights < (h0+s_z+0.5*dh)) & ( t > (it0+tau)) &  (t< (it1+tau)) )[0]
+        idx0=n.where( (heights > (h0-dh*0.5)) & (heights < (h0+dh*0.5)) & (t>it0) & (t<it1) )[0]
+        idx1=n.where( (heights > (h0+s_z-0.5*dh)) & (heights < (h0+s_z+0.5*dh)) & (t > (it0+tau)) &  (t< (it1+tau)) )[0]
 
         if False:
             plt.plot(t[idx0],heights[idx0],"+")
@@ -262,7 +266,7 @@ def cfi(m,
             lat0=lats[k]
             lon0=lons[k]
             mt0=t[k]
-            hg0=heights[k]        
+            hg0=heights[k]  
 
             if horizontal_dist:
                 dist_filter = (n.abs(n.sqrt( (latdeg2km*(lats[idx1]-lat0))**2.0 + (londeg2km*(lons[idx1]-lon0))**2.0 )-s_h) < ds_h/2.0)
@@ -277,7 +281,7 @@ def cfi(m,
                 if "%d-%d"%(k,l) not in pair_dict:
                     hor_dist = n.sqrt( (latdeg2km*(lats[l]-lat0))**2.0+(londeg2km*(lons[l]-lon0))**2.0)
                     # filter our measurements that are too close
-                    if hor_dist > min_ds_h and n.abs(t[l]-t[k])> min_dt:
+                    if hor_dist > min_ds_h and n.abs(t[l]-t[k]) > min_dt:
                         pair_dict["%d-%d"%(k,l)]=True
                         pair_dict["%d-%d"%(l,k)]=True
                         pairs.append((k,l))
@@ -360,7 +364,7 @@ def cfi(m,
             plt.show()
             
         # remove extreme outliers
-        good_idx=n.where(n.abs(resid_std-mean_err) < 4.0*resid_std)[0]
+        good_idx=n.where(n.abs(resid_std-mean_err) < 5.0*resid_std)[0]
 
         An=A[good_idx,:]
         mn=m[good_idx]

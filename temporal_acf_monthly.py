@@ -104,26 +104,26 @@ def summer_small_scale():
     avg_temporal_acfs(dcos_thresh=0.8,
                       h0=90.0,
                       dh=2,
-                      ds_h=50.0,
-                      dtau=900.0,
-                      tau=n.arange(0.0,7*24*3600,900.0),
+                      ds_h=100.0,
+                      dtau=1800.0,
+                      tau=n.arange(0.0,14*24*3600,1800.0),
                       ds_z=1,
                       years=[2018,2019],
                       months=[5,6,7],
-                      name="summer_tacf_7_900_50km")
+                      name="summer_tacf_koki")
     
 def winter_small_scale():
     avg_temporal_acfs(dcos_thresh=0.8,
                       h0=90.0,
                       dh=2,
-                      ds_h=50.0,
-                      dtau=900.0,
-                      tau=n.arange(0.0,7*24*3600,900.0),
+                      ds_h=100.0,
+                      dtau=1800.0,
+                      tau=n.arange(0.0,14*24*3600,1800.0),
                       ds_z=1,
                       years=[2018,2019,2020],
                       months=[11,12,1],
-                      name="winter_tacf_7_900_50km")
+                      name="winter_tacf_koki")
     
 
-winter_small_scale()
-#summer_small_scale()
+#winter_small_scale()
+summer_small_scale()
