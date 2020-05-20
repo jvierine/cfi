@@ -33,7 +33,7 @@ def avg_temporal_acfs(dcos_thresh=0.8,
                       months=[5,6,7],
                       name="summer_tacf"):
     if rank == 0:
-#        os.system("rm mpi/%s/tacf_res*.h5"%(name))
+        os.system("rm mpi/%s/tacf_res*.h5"%(name))
         os.system("mkdir -p mpi/%s"%(name))
     comm.Barrier()
 
@@ -110,7 +110,7 @@ def summer_small_scale():
                       ds_z=1,
                       years=[2018,2019],
                       months=[5,6,7],
-                      name="summer_tacf_koki")
+                      name="summer_tacf_test")
     
 def winter_small_scale():
     avg_temporal_acfs(dcos_thresh=0.8,
@@ -125,5 +125,5 @@ def winter_small_scale():
                       name="winter_tacf_koki")
     
 
-#winter_small_scale()
-summer_small_scale()
+winter_small_scale(name="test")
+summer_small_scale(name="test")
