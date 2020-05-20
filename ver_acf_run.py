@@ -118,52 +118,52 @@ def avg_ver_acfs(dcos_thresh=0.8,
 def winter_large_scale():
     avg_ver_acfs(dcos_thresh=0.8,
                  mean_wind_time_avg=4*3600.0,
-                 h0=80.0,
+                 h0=88.0,
                  ds_h=500.0,
                  dtau=3600.0,
                  s_z=n.arange(0.0,20.0,1.0),
                  years=[2018,2019,2020],
                  months=[11,12,1],
-                 name="winter_vacf_ls",
+                 name="winter_88_vacf_ls",
                  n_days=31)
     
 def winter_small_scale():
     avg_ver_acfs(dcos_thresh=0.8,
                  mean_wind_time_avg=4*3600.0,
-                 h0=80.0,
+                 h0=88.0,
                  ds_h=50.0,
                  dtau=600.0,
                  s_z=n.arange(0.0,20.0,1.0),
                  years=[2018,2019,2020],
                  months=[11,12,1],
-                 name="winter_vacf",
+                 name="winter_88_vacf",
                  n_days=31)
 def summer_large_scale():
     avg_ver_acfs(dcos_thresh=0.8,
                  mean_wind_time_avg=4*3600.0,
-                 h0=80.0,
+                 h0=88.0,
                  ds_h=500.0,
                  dtau=3600.0,
                  s_z=n.arange(0.0,20.0,1.0),
                  years=[2018,2019,2020],
                  months=[11,12,1],
-                 name="summer_vacf_ls",
+                 name="summer_88_vacf_ls",
                  n_days=31)
     
 def summer_small_scale():
     avg_ver_acfs(dcos_thresh=0.8,
                  mean_wind_time_avg=4*3600.0,
-                 h0=80.0,
+                 h0=88.0,
                  ds_h=50.0,
                  dtau=600.0,
                  s_z=n.arange(0.0,20.0,1.0),
                  years=[2018,2019,2020],
                  months=[11,12,1],
-                 name="summer_vacf",
+                 name="summer_88_vacf",
                  n_days=31)
 
 #summer_small_scale()
 #summer_large_scale()
-winter_small_scale()
-#winter_large_scale()
+#winter_small_scale()
+winter_large_scale()
 

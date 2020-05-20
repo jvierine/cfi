@@ -11,12 +11,13 @@ import stuffr
 md=mr.mmaria_data(c.data_directory)#for many files in a directory
 b=md.get_bounds()
 
-t0=stuffr.date2unix(2019,6,1,0,0,0)
-t1=stuffr.date2unix(2019,6,2,0,0,0)
+t0=stuffr.date2unix(2019,1,1,0,0,0)
+t1=stuffr.date2unix(2019,1,2,0,0,0)
 
 # about two weeks of data in June 2019
 d=md.read_data(t0,t1)
 
+# direction cosine filter
 dcos_thresh=0.8
 lats=d["lats"]
 lons=d["lons"]

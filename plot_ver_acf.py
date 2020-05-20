@@ -11,7 +11,7 @@ import cfi_config as c
 import mean_wind_est as mw
 import glob
 
-def read_acf(name="winter_vacf"):
+def read_acf(name="summer_88_vacf"):
     fl=glob.glob("mpi/%s/*.h5"%(name))
     fl.sort()
     
@@ -68,12 +68,18 @@ s_z,acfs_l,errs_l= read_acf(name="summer_vacf_ls")
 
 acfs=acfs_h#-acfs_l
 plt.subplot(121)    
-plt.plot(s_z,acfs_h[:,0])
-plt.plot(s_z,acfs_l[:,0])
-plt.plot(s_z,acfs_h[:,1])
-plt.plot(s_z,acfs_l[:,1])
+plt.plot(s_z,acfs_h[:,0],label=cfi.cf_names[0])
+plt.plot(s_z,acfs_l[:,0],label=cfi.cf_names[1])
+#plt.plot(s_z,acfs_h[:,1])
+#plt.plot(s_z,acfs_l[:,1])
+plt.xlabel("Vertical lag (km)")
+plt.ylabel("Correlation function (m$^2$/s$^2$)")
+plt.title("Autocorrelation function")
 plt.subplot(122)    
 plt.loglog(s_z,2*1.2*acfs[1,0]-2*acfs[:,0])
 plt.loglog(s_z,2*1.2*acfs[1,1]-2*acfs[:,1])
 plt.loglog(s_z,100.0*s_z**(2.0/3.0))
+plt.xlabel("Vertical lag (km)")
+plt.ylabel("Structure function (m$^2$/s$^2$)")
+plt.title("Structure function")
 plt.show()

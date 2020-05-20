@@ -106,9 +106,11 @@ def get_meas(meas_file="res/simone_nov2018_multilink_juha_30min_1000m.h5",
         
     if plot_outlier_filter:
         
-        plt.plot(dcos2,n.abs(dops),".")
-        plt.plot(dcos2[ok_idx],n.abs(dops[ok_idx]),".")
+        plt.plot(dcos2,n.abs(dops),".",label="All measurements")
+        plt.plot(dcos2[ok_idx],n.abs(dops[ok_idx]),".",label="Filtered measurements")
         plt.plot(dc2,35.0*dc2+15)
+        plt.xlabel("Magnitude of Doppler velocity (m/s)")
+        plt.ylabel("Direction cosine")
         plt.show()
 
     
@@ -363,7 +365,7 @@ def cfi(m,
             plt.axhline(-resid_std*5.0,color="red")
             plt.show()
             
-        # remove extreme outliers
+        # remove extreme outliers 
         good_idx=n.where(n.abs(resid_std-mean_err) < 5.0*resid_std)[0]
 
         An=A[good_idx,:]

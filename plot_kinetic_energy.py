@@ -5,8 +5,27 @@ import matplotlib.pyplot as plt
 import h5py
 import glob
 
+import msis_pglow as mp
 
-fl=glob.glob("mpi/winter_large_ke/*.h5")
+#name="large_ke"
+name="small_50km_ke"
+# winter months
+winter=False
+if winter:
+    m0=12
+    title="Winter"
+    fl0=glob.glob("mpi/11.??_%s/*.h5"%(name))
+    fl1=glob.glob("mpi/12.??_%s/*.h5"%(name))
+    fl2=glob.glob("mpi/01.??_%s/*.h5"%(name))
+else:
+    # summer months
+    title="Summer"
+    m0=6
+    fl0=glob.glob("mpi/06.??_%s/*.h5"%(name))
+    fl1=glob.glob("mpi/07.??_%s/*.h5"%(name))
+    fl2=glob.glob("mpi/08.??_%s/*.h5"%(name))
+
+fl=fl0+fl1+fl2
 fl.sort()
 
 h=h5py.File(fl[0],"r")
@@ -29,16 +48,43 @@ for f in fl:
     h.close()
     n_avg+=1.0
 acfs=acfs/ws
-tods=n.concatenate((tods,[24.0]))
+mass=n.zeros([len(tods),len(heights)])
+for ti,t in enumerate(tods):
+    for hi,h in enumerate(heights):
+        mass[ti,hi]=mp.get_atmospheric_mass(2010,m0,hour=int(n.floor(t)),alt=h)
+
+tods=n.concatenate((tods,[23.99]))
+print(tods)
+
+plt.figure(figsize=(8,8))
+plt.subplot(221)
 plt.pcolormesh(tods,heights,n.transpose(acfs[0,:,:]),vmin=0,vmax=8000)
 plt.colorbar()
-plt.show()
-plt.pcolormesh(tods,heights,n.transpose(acfs[1,:,:]),vmin=0,vmax=8000)
-plt.colorbar()
-plt.show()
+plt.xlabel("Time of day (UTC hour)")
+plt.ylabel("Height (km)")
+plt.title("%s $G_{uu}$"%(title))
+plt.subplot(222)
 
-plt.pcolormesh(tods,heights,n.log10(n.transpose(acfs[1,:,:]+acfs[0,:,:])),vmin=0,vmax=4)
+plt.pcolormesh(tods,heights,n.transpose(acfs[1,:,:]),vmin=0,vmax=8000)
+plt.xlabel("Time of day (UTC hour)")
+plt.ylabel("Height (km)")
+plt.title("$G_{vv}$")
 plt.colorbar()
+plt.subplot(223)
+
+plt.pcolormesh(tods,heights,n.transpose(acfs[2,:,:]),vmin=0,vmax=1000)
+plt.xlabel("Time of day (UTC hour)")
+plt.ylabel("Height (km)")
+plt.title("$G_{ww}$")
+plt.colorbar()
+plt.subplot(224)
+
+plt.pcolormesh(tods,heights,n.log10(0.5*n.transpose(mass)*n.transpose(acfs[1,:,:]+acfs[0,:,:]+acfs[2,:,:])),vmin=-5,vmax=-1)
+plt.xlabel("Time of day (UTC hour)")
+plt.ylabel("Height (km)")
+plt.title("$\\frac{1}{2}\\rho(G_{uu}+G_{vv}+G_{ww})$ (J/m$^2$)" )
+plt.colorbar()
+plt.tight_layout()
 plt.show()
 
     

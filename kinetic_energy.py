@@ -101,7 +101,7 @@ def avg_ke_acfs(md,
 md=mr.mmaria_data(c.data_directory)#for many files in a directory
 b=md.get_bounds()
 
-def monthly_large():
+def monthly_large(name="test"):
     """ mohtly kinetic energy large scale """
 
     pars=[]
@@ -122,9 +122,9 @@ def monthly_large():
                     months=[mi+1],
                     day0=day*14+1,
                     n_days=31,
-                    name="%02d.%02d_large_ke"%(mi,day))
+                    name="%02d.%02d_%s_ke"%(mi,day,name))
         
-def monthly_small():
+def monthly_small(name="test"):
     """ mohtly kinetic energy large scale """
 
     pars=[]
@@ -145,7 +145,7 @@ def monthly_small():
                     months=[mi+1],
                     day0=day*14+1,
                     n_days=31,
-                    name="%02d.%02d_small_50km_ke"%(mi,day))
+                    name="%02d.%02d_%s_ke"%(mi,day,name))
 
-#monthly_large()
-monthly_small()
+monthly_large(name="test")
+monthly_small(name="test")

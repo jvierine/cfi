@@ -7,7 +7,8 @@ import glob
 
 alt=90
 
-run_name="small_50km_ke"
+run_name="large_ke"
+#run_name="small_50km_ke"
 
 fl=glob.glob("mpi/00.00_%s/*.h5"%(run_name))
 fl.sort()
