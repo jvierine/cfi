@@ -26,6 +26,7 @@ def avg_ke_acfs(md,
                 ds_h=25.0,
                 day0=1,
                 n_days=31,
+                dtau=900.0,
                 heights=n.arange(75,120), # km
                 years=[2018,2019,2020],
                 months=[5,6,7],
@@ -78,7 +79,7 @@ def avg_ke_acfs(md,
                                                                  dh=2,
                                                                  ds_z=1.0,
                                                                  ds_h=ds_h,
-                                                                 dtau=dt*3600.0,
+                                                                 dtau=dtau,
                                                                  tau=0.0,
                                                                  horizontal_dist=True,
                                                                  hour_of_day=tod,
@@ -117,6 +118,7 @@ def monthly_large(name="test"):
                     tods=n.arange(48)*0.5, # hours
                     dt=2.0,
                     ds_h=500.0,
+                    dtau=3600.0,
                     heights=n.arange(70,120), # km
                     years=[2018,2019,2020],
                     months=[mi+1],
@@ -132,13 +134,14 @@ def monthly_small(name="test"):
     for mi in range(12):
         for day in range(2):
             pars.append((mi,day))
-    print(len(pars))
+    print("n_pars %d"%(len(pars)))
     for pi in range(rank,len(pars),size):
         mi=pars[pi][0]
         day=pars[pi][1]        
         avg_ke_acfs(md,
                     tods=n.arange(48)*0.5, # hours
-                    dt=2.0,
+                    dt=2,
+                    dtau=900.0,
                     ds_h=50.0,
                     heights=n.arange(70,120), # km
                     years=[2018,2019,2020],
@@ -147,5 +150,5 @@ def monthly_small(name="test"):
                     n_days=31,
                     name="%02d.%02d_%s_ke"%(mi,day,name))
 
-monthly_large(name="test")
+#monthly_large(name="test")
 monthly_small(name="test")

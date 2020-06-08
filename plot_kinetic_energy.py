@@ -8,22 +8,23 @@ import glob
 import msis_pglow as mp
 
 #name="large_ke"
-name="small_50km_ke"
+#name="small_50km_ke"
+name="test_ke"
 # winter months
-winter=False
+winter=True
 if winter:
     m0=12
     title="Winter"
-    fl0=glob.glob("mpi/11.??_%s/*.h5"%(name))
-    fl1=glob.glob("mpi/12.??_%s/*.h5"%(name))
-    fl2=glob.glob("mpi/01.??_%s/*.h5"%(name))
+    fl0=glob.glob("mpi/10.??_%s/*.h5"%(name))
+    fl1=glob.glob("mpi/11.??_%s/*.h5"%(name))
+    fl2=glob.glob("mpi/00.??_%s/*.h5"%(name))
 else:
     # summer months
     title="Summer"
     m0=6
-    fl0=glob.glob("mpi/06.??_%s/*.h5"%(name))
-    fl1=glob.glob("mpi/07.??_%s/*.h5"%(name))
-    fl2=glob.glob("mpi/08.??_%s/*.h5"%(name))
+    fl0=glob.glob("mpi/05.??_%s/*.h5"%(name))
+    fl1=glob.glob("mpi/06.??_%s/*.h5"%(name))
+    fl2=glob.glob("mpi/07.??_%s/*.h5"%(name))
 
 fl=fl0+fl1+fl2
 fl.sort()
