@@ -12,6 +12,7 @@ import mean_wind_est as mw
 import glob
 
 def read_acf(name="summer_88_vacf"):
+    
     fl=glob.glob("mpi/%s/*.h5"%(name))
     fl.sort()
     
@@ -63,13 +64,13 @@ def read_acf(name="summer_88_vacf"):
 
     return(s_z,acfs,err_vars)
 
-s_z,acfs_h,errs= read_acf(name="summer_vacf")
-s_z,acfs_l,errs_l= read_acf(name="summer_vacf_ls")
+s_z,acfs_h,errs= read_acf(name="summer_82_vacf")
+#s_z,acfs_l,errs_l= read_acf(name="summer_vacf_ls")
 
 acfs=acfs_h#-acfs_l
 plt.subplot(121)    
 plt.plot(s_z,acfs_h[:,0],label=cfi.cf_names[0])
-plt.plot(s_z,acfs_l[:,0],label=cfi.cf_names[1])
+plt.plot(s_z,acfs_h[:,1],label=cfi.cf_names[1])
 #plt.plot(s_z,acfs_h[:,1])
 #plt.plot(s_z,acfs_l[:,1])
 plt.xlabel("Vertical lag (km)")
