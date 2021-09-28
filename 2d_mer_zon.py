@@ -21,24 +21,28 @@ rank=comm.Get_rank()
 
 def avg_mer_zon(md, # data
                 dcos_thresh=0.8,
-                h0=90.0,
-                dh=2,
-                ds_x=100.0,
-                ds_y=100.0,
-                dtau=600.0,
-                s_x=0.0,
-                s_y=0.0,
-                xi=0,
-                yi=0,
-                x_lags=n.arange(-500,500.0,100.0),
-                y_lags=n.arange(-500,500.0,100.0),
-                ds_z=1,
+                h0=87.0,         # smallest height
+                h1=93.0,         # biggest height
+                ds_x=25.0,       # longest separation in east-west dist km
+                ds_y=25.0,       # longest separation in north-south dist km
+                ds_z=1,          # longest separation in vertical km 
+                dtau=1800.0,     # longest separation in time (s)
+                s_x=0.0,         # x lag mean
+                s_y=0.0,         # y lag mean 
+                xi=0,            # index 
+                yi=0,            # index
+                x_lags=n.arange(-500,500.0,50.0),
+                y_lags=n.arange(-500,500.0,50.0),
                 years=[2018,2019,2020],                 
                 months=[5,6,7],
                 n_months=3,
                 name="summer_2d_mer_zon"):
 
     print("zon %1.2f mer %1.2f"%(s_x,s_y))
+
+    dh=(93.0-87.0)*2.0
+
+    # to be done. divide into arbitrary time intervals
     pars=[]
     for year in years:
         for month in months:
@@ -52,9 +56,8 @@ def avg_mer_zon(md, # data
         month=pars[pi][1]
         day=pars[pi][2]
         d0=datetime.date(year,month,day)
-        t0=time.mktime(d0.timetuple())
-        
-        d=md.read_data(t0=t0,t1=t0+n_months*31*24*3600.0,h0=h0-dh,h1=h0+dh)
+        t0=time.mktime(d0.timetuple())        
+        d=md.read_data(t0=t0,t1=t0+n_months*31*24*3600.0,h0=h0,h1=h1)
         n_meas=len(d["t"])
         print("n_meteors %d"%(n_meas))
         
@@ -67,8 +70,8 @@ def avg_mer_zon(md, # data
                               data='mmaria')
             
             acf, err, itaus, ixs, iys, izs, is_h=cfi.cfi(meas,
-                                                         h0=h0,
-                                                         dh=2,
+                                                         h0=0.5*(h0+h1),
+                                                         dh=dh,
                                                          ds_z=1.0,
                                                          ds_x=ds_x,
                                                          ds_y=ds_y,
@@ -79,7 +82,6 @@ def avg_mer_zon(md, # data
                                                          horizontal_dist=False)
             print(ixs)
             print(iys)
-            
             print(acf)
             ofname="mpi/%s/2d_mer_zon_res-%d-%d-%d-%d.h5"%(name,xi,yi,pi,rank)
             print("writing %s"%(ofname))
@@ -100,10 +102,15 @@ def avg_mer_zon(md, # data
 md=mr.mmaria_data(c.data_directory)#for many files in a directory
 b=md.get_bounds()
 
-def mpi_run(name="summer_2d_mer_zon_3",month0=5):
+def mpi_run(name="all_2d"):
 
-    s_x=n.arange(-250, 300.0, 25.0)
-    s_y=n.arange(-250, 300.0, 25.0)
+    h0=87
+    h1=93
+    s_x=n.arange(-350, 350.0, 50.0)
+    s_y=n.arange(-350, 350.0, 50.0)
+    ds_x = 50.0
+    ds_y = 50.0
+    dtau = 1800.0
 
     if rank == 0:
         os.system("rm mpi/%s/*.h5"%(name))        
@@ -126,11 +133,11 @@ def mpi_run(name="summer_2d_mer_zon_3",month0=5):
         print(p)
         avg_mer_zon(md, 
                     dcos_thresh=0.8,
-                    h0=90.0,
-                    dh=4,
-                    ds_x=100.0,
-                    ds_y=100.0,
-                    dtau=900.0,
+                    h0=h0,
+                    h1=h1,                    
+                    ds_x=ds_x,
+                    ds_y=ds_y,
+                    dtau=dtau,
                     s_y=ylag,
                     s_x=xlag,
                     y_lags=s_y,
@@ -139,13 +146,13 @@ def mpi_run(name="summer_2d_mer_zon_3",month0=5):
                     xi=xi,
                     ds_z=1,
                     years=[2018,2019],
-                    months=[month0],
-                    n_months=3,
+                    months=[1,2,3,4,5,6,7,8,9,10,11,12],
+                    n_months=1,
                     name=name)
 
     print("done %d"%(rank))
 
 #mpi_run(name="summer_mer_zon_100km_900s",month0=5)
-mpi_run(name="winter_mer_zon_100km_900s",month0=11)
+mpi_run(name="all")
 #mpi_run(name="winter_mer_zon_50km_900s",month0=11)
 #mpi_run(name="winter_mer_zon_50km_900s",month0=11)

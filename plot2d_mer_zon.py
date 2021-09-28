@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import h5py
 import cfi_dac as cfi
 
-name="summer_mer_zon_100km_900s"
+name="all"
 #name="summer_mer_zon_50km_900s"
 
 #name="winter_mer_zon_100km_900s"
@@ -17,10 +17,10 @@ fl=glob.glob("mpi/%s/*.h5"%(name))
 fl.sort()
 print(fl)
 h=h5py.File(fl[0],"r")
-s_x=n.copy(h["s_x"].value)
-s_y=n.copy(h["s_y"].value)
-dtau=n.copy(h["dtau"].value)
-ds_x=n.copy(h["ds_x"].value)
+s_x=n.copy(h["s_x"][()])
+s_y=n.copy(h["s_y"][()])
+dtau=n.copy(h["dtau"][()])
+ds_x=n.copy(h["ds_x"][()])
 
 acfs=n.zeros([6,len(s_x),len(s_y)])
 ws=n.zeros([6,len(s_x),len(s_y)])
@@ -30,12 +30,12 @@ for f in fl:
     print(f)
     h=h5py.File(f,"r")
     if "acf" in h.keys():
-        if n.sum(n.isnan(h["acf"].value)) == 0:
-            # print(h["err"].value)
-            w=1.0/h["err"].value
-            xi=h["xi"].value
-            yi=h["yi"].value
-            acfs[:,xi,yi]+=w*h["acf"].value
+        if n.sum(n.isnan(h["acf"][()])) == 0:
+            # print(h["err"][()])
+            w=1.0#/h["err"][()]
+            xi=h["xi"][()]
+            yi=h["yi"][()]
+            acfs[:,xi,yi]+=w*h["acf"][()]
             ws[:,xi,yi]+=w
     h.close()
 acfs=acfs/ws

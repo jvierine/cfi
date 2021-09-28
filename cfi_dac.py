@@ -30,8 +30,8 @@ n.set_printoptions(precision=3)
 # constants,
 # TBD add altitude and latitude dependence
 # (won't make a huge difference, but just to be complete).
-latdeg2km=gc.latdeg2km#111.321
-londeg2km=gc.londeg2km#65.122785
+latdeg2km=gc.latdeg2km
+londeg2km=gc.londeg2km
 
 cf_names=["$G_{uu}$","$G_{vv}$","$G_{ww}$",
           "$G_{uv}$","$G_{uw}$","$G_{vw}$"]
@@ -61,8 +61,8 @@ def get_meas(meas_file="res/simone_nov2018_multilink_juha_30min_1000m.h5",
              outlier_filter=True,
              data='h5file'):
     '''
-    read measurements, subtract mean wind if requested.
-    the mean wind is whatever is in the file
+     Read measurements, subtract mean wind if requested.
+     the mean wind is whatever is in the file
     '''
     
     if data=='h5file':
@@ -145,8 +145,7 @@ def get_meas(meas_file="res/simone_nov2018_multilink_juha_30min_1000m.h5",
                    dvdy*(lats-mlat0)*gc.latdeg2km*braggs[:,1]+\
                    dudx*(lons-mlon0)*gc.londeg2km*braggs[:,0]+\
                    dvdx*(lons-mlon0)*gc.londeg2km*braggs[:,1]
-                    
-        
+                            
         # residual vel after removing mean horizontal wind
         # (negative sign in analysis)
         dopsp = dops + mean_dops/2.0/n.pi
@@ -172,6 +171,7 @@ def get_meas(meas_file="res/simone_nov2018_multilink_juha_30min_1000m.h5",
         braggs=braggs[ok_idx,:]
         dops=dopsp[ok_idx]
         dcoss=dcoss[ok_idx,:]
+        
     if data=='file':
         h.close()
     return({"t":t,"lats":lats,"lons":lons,"heights":heights,"braggs":braggs,"dops":dops,"dcoss":dcoss})
