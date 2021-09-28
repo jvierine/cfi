@@ -5,7 +5,7 @@ Vierinen, Juha, et al. "Observing Mesospheric Turbulence With Specular Meteor Ra
 
 https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2019EA000570
 
-# Facuond's notes
+# Facundo's notes
 - What works, what doesn't
 - Improvement ideas
 - How-to
