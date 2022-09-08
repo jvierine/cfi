@@ -20,7 +20,6 @@ md=mr.mmaria_data(c.data_directory)#for many files in a directory
 b=md.get_bounds()
 
 
-
 def avg_temporal_acfs(dcos_thresh=0.8,
                       mean_wind_time_avg=4*3600.0,
                       h0=90.0,

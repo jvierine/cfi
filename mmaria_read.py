@@ -44,7 +44,7 @@ class mmaria_data:
             if self.debug:
                 print("reading %s"%(f))
             h=h5py.File(f,"r")
-            t=h["t"].value
+            t=h["t"][()]
             self.mint.append(n.min(t))
             self.maxt.append(n.max(t))
             h.close()
@@ -97,31 +97,31 @@ class mmaria_data:
 #            print(i)
             h=h5py.File(self.fl[i],"r")
             if read_all_detections:
-                didx=n.where( ((h["t"].value) > t0) &
-                              ((h["t"].value) < t1) &
-                              (h["heights"].value/1e3 > h0) &
-                              (h["heights"].value/1e3 < h1) )[0]
+                didx=n.where( ((h["t"][()]) > t0) &
+                              ((h["t"][()]) < t1) &
+                              (h["heights"][()]/1e3 > h0) &
+                              (h["heights"][()]/1e3 < h1) )[0]
                 
-                t = n.concatenate((t,h["t"].value[didx]))
-                alpha_norm = n.concatenate((alpha_norm,h["alpha_norm"].value[didx]))
-                braggs = n.concatenate((braggs,h["braggs"].value[didx,:]))
+                t = n.concatenate((t,h["t"][()][didx]))
+                alpha_norm = n.concatenate((alpha_norm,h["alpha_norm"][()][didx]))
+                braggs = n.concatenate((braggs,h["braggs"][()][didx,:]))
         
-                dcos = n.concatenate((dcos,h["dcos"].value[didx,:]))
-                dh=h["dh"].value
-                dop_errs = n.concatenate((dop_errs,h["dop_errs"].value[didx]))
-                dops = n.concatenate((dops,h["dops"].value[didx]))
-                dt=h["dt"].value
-                heights=n.concatenate((heights,h["heights"].value[didx]))
-                lats=n.concatenate((lats,h["lats"].value[didx]))
-                lons=n.concatenate((lons,h["lons"].value[didx]))
-                link=n.concatenate((link,h["link"].value[didx]))
-                v_resid=n.concatenate((v_resid,h["v_resid"].value[didx]))
+                dcos = n.concatenate((dcos,h["dcos"][()][didx,:]))
+                dh=h["dh"][()]
+                dop_errs = n.concatenate((dop_errs,h["dop_errs"][()][didx]))
+                dops = n.concatenate((dops,h["dops"][()][didx]))
+                dt=h["dt"][()]
+                heights=n.concatenate((heights,h["heights"][()][didx]))
+                lats=n.concatenate((lats,h["lats"][()][didx]))
+                lons=n.concatenate((lons,h["lons"][()][didx]))
+                link=n.concatenate((link,h["link"][()][didx]))
+                v_resid=n.concatenate((v_resid,h["v_resid"][()][didx]))
             
             # mean horizontal wind model
-            rgs=h["rgs"].value
-            times=n.concatenate((times,h["times"].value))
-            v=n.concatenate((v,h["v"].value),axis=1)
-            ve=n.concatenate((ve,h["ve"].value),axis=1)
+            rgs=h["rgs"][()]
+            times=n.concatenate((times,h["times"][()]))
+            v=n.concatenate((v,h["v"][()]),axis=1)
+            ve=n.concatenate((ve,h["ve"][()]),axis=1)
             
             if self.debug:
                 print("file idx %d"%(i))
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     # read all meteor radar data between these two timestamps
     d=md.read_data(1514774804,1514974804)
 
-    plt.pcolormesh(d["times"],d["rgs"]/1e3,n.transpose(d["v"][0,:,:]),vmin=-100,vmax=100)
+    plt.pcolormesh(d["times"]/24.0/3600.0,d["rgs"]/1e3,n.transpose(d["v"][0,:,:]),vmin=-100,vmax=100)
     plt.xlabel("Time (unix)")
     plt.ylabel("Altitude (km)")
     plt.colorbar()
