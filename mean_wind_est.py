@@ -100,7 +100,9 @@ def mean_wind_grad(meas,
 
         # find all measurements that are at the same height and time bin
         for r in rgs:
-            hidx=n.where((heights > r)&(heights < (r+dh))&(ts> (t-dt/2))&(ts<(t+dt/2)))[0]
+            # the range gate is centered at range r and has a width of dh
+            # the time step is centered at t and has a width of dt
+            hidx=n.where((heights > (r-dh/2.0))&(heights < (r+dh/2.0))&(ts> (t-dt/2))&(ts<(t+dt/2)))[0]
             ridxs.append(hidx)
 
         # for each height interval
@@ -230,7 +232,7 @@ def plot_wind(md,
               avg_time=3600*4):
     
     d=md.read_data(t0=t0-avg_time,t1=t1+avg_time)
-
+    
     n_times=int(n.round((t1-t0)/dt))
     print(n_times)
     times=n.arange(n_times)*dt+t0
@@ -263,7 +265,6 @@ def plot_wind(md,
         plt.ylabel("Height")
         plt.colorbar()
         
-
         plt.subplot(323)
         plt.pcolormesh(times_h,rgs,n.transpose(v[2,:,:]),vmin=-dv_max,vmax=dv_max,cmap="jet")
         plt.title("$d\overline{u}/dy$ (m/s/km)")
