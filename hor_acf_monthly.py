@@ -79,13 +79,13 @@ def avg_hor_acfs(md, # data
             
 
             ih0,idtau,dis_h,acfs,errs,ishs,si_h,names=cfi.hor_acfs(meas,
-                                                      h0=h0,
-                                                      dh=dh,
-                                                      ds_z=ds_z,
-                                                      ds_h=ds_h,
-                                                      s_h=s_h,
-                                                      dtau=dtau,
-                                                      title=name)
+                                                                   h0=h0,
+                                                                   dh=dh,
+                                                                   ds_z=ds_z,
+                                                                   ds_h=ds_h,
+                                                                   s_h=s_h,
+                                                                   dtau=dtau,
+                                                                   title=name)
             
             ho=h5py.File("mpi/%s/hacf_res-%06d.h5"%(name,pi),"w")
             ho["acfs"]=acfs
