@@ -14,7 +14,7 @@ import cfi_config as c
 import time
 import datetime
 import stuffr
-
+import os
 import geoid_const as gc
 
 from mpi4py import MPI
@@ -28,7 +28,6 @@ londeg2km=gc.londeg2km# n.pi*6371.0*n.cos(n.pi*69.0/180.0)/180.0#65.122785
 def mean_wind_grad(meas,
                    times,
                    dt=60*60,
-                   t_step=900,
                    dh=1.0,
                    max_alt=105,
                    min_alt=80,
@@ -189,12 +188,15 @@ def mean_wind_grad(meas,
     if debug:
         plt.subplot(311)
         plt.pcolormesh(times_h,rgs,n.sqrt(n.transpose(dop_resid)))
+        plt.title("Dopppler residual stdev (Hz)")
         plt.colorbar()
         plt.subplot(312)    
         plt.pcolormesh(times_h,rgs,n.transpose(v[0,:,:]))
+        plt.title("Zonal wind (m/s)")        
         plt.colorbar()    
         plt.subplot(313)        
         plt.pcolormesh(times_h,rgs,n.transpose(v[1,:,:]))
+        plt.title("Meridional wind (m/s)")                
         plt.colorbar()    
         plt.tight_layout()
         plt.show()
@@ -228,7 +230,7 @@ def plot_wind(md,
               t1,
               odir="/mnt/data/juha/mmaria_norway/mean_wind",
               dt=900.0,
-              gradients=False,
+              gradients=True,
               avg_time=3600*4):
     
     d=md.read_data(t0=t0-avg_time,t1=t1+avg_time)
@@ -245,7 +247,7 @@ def plot_wind(md,
                                                                     max_alt=105,
                                                                     min_alt=78,
                                                                     ofname="%s/mean_wind-%d.h5"%(odir,t0),
-                                                                    gradients=False,
+                                                                    gradients=True,
                                                                     dcos_thresh=dcos_thresh)
     v_max=100.0
     dv_max=0.5
@@ -327,12 +329,13 @@ def plot_all():
     n_days=int(n.round((b[1]-b[0])/(24*3600)))
     
     bt0=int(n.round(b[0]/(24*3600)))*24*3600
-    
+
+    os.system("mkdir -p %s/mean_wind"%(c.plot_directory))
     for di in range(rank,n_days,size):
         plot_wind(md,
                   t0=bt0+24*3600*di,
                   t1=bt0+24*3600*(di+1),
-                  odir="/mnt/data/juha/mmaria_norway/mean_wind",
+                  odir="%s/mean_wind"%(c.plot_directory),
                   avg_time=3600*4)
 
 if __name__ == "__main__":

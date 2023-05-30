@@ -42,14 +42,14 @@ sf_names=["uu","vv","ww","uv","uw","vw"]
 def vel(t,alt,lats,lons,times,rgs,v,dt,dh):
     '''
      evaluate mean wind without gradients. 
-     tbd: implement better interpolation and linear gradients for mean wind.    
+     tbd: implement better interpolation and linear gradients for mean wind. 
     '''
     ti=n.array(n.round((t-times[0])/dt),dtype=n.int)
     hi=n.array(n.floor((alt-rgs[0])/dh),dtype=n.int)
     hi[hi>(v.shape[2]-1)]=v.shape[2]-1
     ti[ti<0]=0
     ti[ti>(v.shape[1]-1)]=(v.shape[1]-1)
-    return(v[0,ti,hi],v[1,ti,hi],v[2,ti,hi],v[3,ti,hi],v[4,ti,hi],v[5,ti,hi])
+    return(v[0,ti,hi],v[1,ti,hi])
 
 # to use with mmaria file? h=mmaria_read().read_data(t0,t1) but .value doesnt work here, must change this script?
 def get_meas(meas_file="res/simone_nov2018_multilink_juha_30min_1000m.h5",
@@ -68,14 +68,14 @@ def get_meas(meas_file="res/simone_nov2018_multilink_juha_30min_1000m.h5",
     if data=='h5file':
         h=h5py.File(meas_file,"r")
         
-        t=n.copy(h["t"].value)
-        lats=n.copy(h["lats"].value)
-        lons=n.copy(h["lons"].value)
-        heights=n.copy(h["heights"].value)
-        braggs=n.copy(h["braggs"].value)
-        dops=n.copy(h["dops"].value)
+        t=n.copy(h["t"][()])
+        lats=n.copy(h["lats"][()])
+        lons=n.copy(h["lons"][()])
+        heights=n.copy(h["heights"][()])
+        braggs=n.copy(h["braggs"][()])
+        dops=n.copy(h["dops"][()])
         if "dcos" in h.keys():
-            dcoss=n.copy(h["dcos"].value)
+            dcoss=n.copy(h["dcos"][()])
         else:
             dcoss=n.zeros([len(t),2])
 
@@ -126,25 +126,23 @@ def get_meas(meas_file="res/simone_nov2018_multilink_juha_30min_1000m.h5",
     if mean_rem:
         hm=h5py.File(mean_wind_file,"r")
         # grid
-        times=n.copy(hm["times"].value)
-        rgs=n.copy(hm["rgs"].value)
-        v=n.copy(hm["v"].value)
-        dt=n.copy(hm["dt"].value)
+        times=n.copy(hm["times"][()])
+        rgs=n.copy(hm["rgs"][()])
+        v=n.copy(hm["v"][()])
+        dt=n.copy(hm["dt"][()])
         print(dt)
-        dh=n.copy(hm["dh"].value)
-        mlat0=n.copy(hm["lat0"].value)
-        mlon0=n.copy(hm["lon0"].value)
+        print(v.shape)
+        dh=n.copy(hm["dh"][()])
+        mlat0=n.copy(hm["lat0"][()])
+        mlon0=n.copy(hm["lon0"][()])
         hm.close()
 
         # interpolate zonal and merid wind
-        vu,vv,dudy,dvdy,dudx,dvdx=vel(t,heights,lats,lons,times,rgs,v,dt,dh)
+        vu,vv=vel(t,heights,lats,lons,times,rgs,v,dt,dh)
         
-        # don't remove gradients
-        mean_dops=vu*braggs[:,0]+vv*braggs[:,1]+\
-                   dudy*(lats-mlat0)*gc.latdeg2km*braggs[:,0]+\
-                   dvdy*(lats-mlat0)*gc.latdeg2km*braggs[:,1]+\
-                   dudx*(lons-mlon0)*gc.londeg2km*braggs[:,0]+\
-                   dvdx*(lons-mlon0)*gc.londeg2km*braggs[:,1]
+        # this is the doppler shift that the mean wind should give us
+        mean_dops=vu*braggs[:,0]+vv*braggs[:,1]
+
                             
         # residual vel after removing mean horizontal wind
         # (negative sign in analysis)
@@ -736,9 +734,9 @@ def meas_time_of_day(hour_of_day=n.arange(48)*0.5,
 def mean_wind_cf_plot():
     
     ho=h5py.File("mean_cf.h5", "r")
-    hour_of_day=n.copy(ho["hour_of_day"].value)
-    heights=n.copy(ho["heights"].value)
-    C=n.copy(ho["C"].value)
+    hour_of_day=n.copy(ho["hour_of_day"][()])
+    heights=n.copy(ho["heights"][()])
+    C=n.copy(ho["C"][()])
 
     a=n.genfromtxt('msis.txt')
     dens=si.interp1d(a[:,0],a[:,1])
