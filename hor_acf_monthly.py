@@ -30,6 +30,10 @@ def avg_hor_acfs(md, # data
                  name="summer_hacf",
                  remove_mean=False):
 
+    # what should we do.
+    #
+    # daily averages of horizontal correlation functions, save them for post processing
+    #
     if rank == 0:
         os.system("rm mpi/%s/*.h5"%(name))        
         os.system("mkdir -p mpi/%s"%(name))
@@ -40,7 +44,6 @@ def avg_hor_acfs(md, # data
     all_errs=[]
     
     n_avg=0.0
-
 
     pars=[]
     for year in years:
@@ -61,14 +64,15 @@ def avg_hor_acfs(md, # data
         print("n_meteors %d"%(n_meas))
         if n_meas > 100:
             if remove_mean:
-                times,times_h,v,ve,rgs,lat0,lon0,dt,dh=mw.mean_wind(meas=d, 
-                                                                    dt=mean_wind_time_avg,
-                                                                    dh=1.0,
-                                                                    max_alt=105,
-                                                                    min_alt=78,
-                                                                    dcos_thresh=dcos_thresh,
-                                                                    ofname="res/tmp-%03d.h5"%(rank),
-                                                                    data='dict')
+                times,times_h,v,ve,rgs,lat0,lon0,dt,dh=mw.mean_wind_grad(meas=d,
+                                                                         times=n.
+                                                                         dt=mean_wind_time_avg,
+                                                                         dh=1.0,
+                                                                         max_alt=105,
+                                                                         min_alt=78,
+                                                                         dcos_thresh=dcos_thresh,
+                                                                         ofname="res/tmp-%03d.h5"%(rank),
+                                                                         data='dict')
                 
             meas=cfi.get_meas(meas_file=d,
                               mean_rem=remove_mean,
@@ -213,10 +217,10 @@ def summer_hp():
 #exit(0)
 #comm.Barrier()
 
-#winter_hp()
+winter_hp()
 #summer_hp()
 
 #summer()
-winter()
+#winter()
 #spring()
 #fall()
