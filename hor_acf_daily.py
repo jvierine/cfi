@@ -144,6 +144,6 @@ for day_no in range(n_days):
                  dtau=600.0,           # lag time resolution
                  s_h=n.arange(0.0,500.0,25.0),
                  ds_z=1,               # vertical resolution
-                 t0=t0_floor,
-                 t1=t0_floor+24*3600)
+                 t0=t0,
+                 t1=t1)
 

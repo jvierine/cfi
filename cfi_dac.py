@@ -197,6 +197,7 @@ def cfi(m,
         min_ds_h=0.0,
         min_dt=5.0,
         debug_plot=False,
+        LTz=False,
         plot_thist=False):
     '''
     Calculate various lags. Use tree-like sorting of measurements to reduce the time
@@ -236,7 +237,10 @@ def cfi(m,
     s_xs=[]
     s_ys=[]
     s_zs=[]
-    s_hs=[]                
+    s_hs=[]
+    cosphi = []
+    sinphi = []                
+    
     
     hor_dists=[]
 
@@ -291,6 +295,10 @@ def cfi(m,
                         s_xs.append(londeg2km*(lons[l]-lon0))
                         s_ys.append(latdeg2km*(lats[l]-lat0))
                         s_hs.append(n.sqrt( (latdeg2km*(lats[l]-lat0))**2.0+(londeg2km*(lons[l]-lon0))**2.0))
+                        # angles for LTz processing
+                        cosphi.append(londeg2km*(lons[l]-lon0)/n.sqrt( (latdeg2km*(lats[l]-lat0))**2.0+(londeg2km*(lons[l]-lon0))**2.0))
+                        sinphi.append(latdeg2km*(lats[l]-lat0)/n.sqrt( (latdeg2km*(lats[l]-lat0))**2.0+(londeg2km*(lons[l]-lon0))**2.0))
+                        
 
     # histogram and interpolate the number of measurements as a function of day
     tods=n.array(tods)
@@ -327,26 +335,85 @@ def cfi(m,
 
         w=1.0/countf(n.mod( (t[k]-t0)/3600,24.0 ))
         ws.append(w)
-        A[pi,0]=w*braggs[k,0]*braggs[l,0] # ku1*ku2
-        Ao[pi,0]=braggs[k,0]*braggs[l,0] # ku1*ku2
-            
-        A[pi,1]=w*braggs[k,1]*braggs[l,1] # kv1*kv2
-        Ao[pi,1]=braggs[k,1]*braggs[l,1] # kv1*kv2
-            
-        A[pi,2]=w*braggs[k,2]*braggs[l,2] # kw1*kw2
-        Ao[pi,2]=braggs[k,2]*braggs[l,2] # kw1*kw2
-            
-        A[pi,3]=w*(braggs[k,0]*braggs[l,1]+braggs[k,1]*braggs[l,0]) # ku1*kv2 + kv1*ku2
-        Ao[pi,3]=braggs[k,0]*braggs[l,1]+braggs[k,1]*braggs[l,0] # ku1*kv2 + kv1*ku2
-            
-        A[pi,4]=w*(braggs[k,0]*braggs[l,2]+braggs[k,2]*braggs[l,0]) # ku1*kw2 + kw1*ku2
-        Ao[pi,4]=braggs[k,0]*braggs[l,2]+braggs[k,2]*braggs[l,0] # ku1*kw2 + kw1*ku2
-            
-        A[pi,5]=w*(braggs[k,1]*braggs[l,2]+braggs[k,2]*braggs[l,1]) # kv1*kw2 + kw1*kv2
-        Ao[pi,5]=braggs[k,1]*braggs[l,2]+braggs[k,2]*braggs[l,1] # kv1*kw2 + kw1*kv2            
+
+
+        if LTz:
+            bragg_k_L = braggs[k,0]*cosphi[pi] + braggs[k,1]*sinphi[pi] # rotate clockwise
+            bragg_k_T = -braggs[k,0]*sinphi[pi] + braggs[k,1]*cosphi[pi] 
+#            bragg_k_L = braggs[k,0]*cosphi[pi] + -braggs[k,1]*sinphi[pi] # rotate counterclockwise
+#            bragg_k_T = braggs[k,0]*sinphi[pi] + braggs[k,1]*cosphi[pi] 
+            bragg_k_z = braggs[k,2]
         
-        m[pi]=w*((2*n.pi)**2.0)*dops[k]*dops[l]
-        mo[pi]=((2*n.pi)**2.0)*dops[k]*dops[l]        
+            bragg_l_L = braggs[l,0]*cosphi[pi] + braggs[l,1]*sinphi[pi] 
+            bragg_l_T = -braggs[l,0]*sinphi[pi] + braggs[l,1]*cosphi[pi]
+#            bragg_l_L = braggs[l,0]*cosphi[pi] + -braggs[l,1]*sinphi[pi] 
+#            bragg_l_T = braggs[l,0]*sinphi[pi] + braggs[l,1]*cosphi[pi]
+            bragg_l_z = braggs[l,2]
+
+
+            A[pi,0] = w*bragg_k_L*bragg_l_L
+            Ao[pi,0] = bragg_k_L*bragg_l_L
+            
+            A[pi,1] = w*bragg_k_T*bragg_l_T # kv1*kv2
+            Ao[pi,1]= bragg_k_T*bragg_l_T # kv1*kv2
+            
+            A[pi,2] = w*bragg_k_z*bragg_l_z # kw1*kw2
+            Ao[pi,2] = bragg_k_z*bragg_l_z# kw1*kw2
+        
+            A[pi,3] = w*(bragg_k_L*bragg_l_T+bragg_k_T*bragg_l_L) # ku1*kv2 + kv1*ku2
+            Ao[pi,3] = (bragg_k_L*bragg_l_T+bragg_k_T*bragg_l_L)
+        
+            A[pi,4] = w*(bragg_k_L*bragg_l_z+bragg_k_z*bragg_l_L) # ku1*kw2 + kw1*ku2
+            Ao[pi,4] = bragg_k_L*bragg_l_z+bragg_k_z*bragg_l_L # ku1*kw2 + kw1*ku2
+        
+            A[pi,5] = w*(bragg_k_T*bragg_l_z+bragg_k_z*bragg_l_T) # kv1*kw2 + kw1*kv2
+            Ao[pi,5] = bragg_k_T*bragg_l_z+bragg_k_z*bragg_l_T # kv1*kw2 + kw1*kv2 
+            
+            m[pi]=w*((2*n.pi)**2.0)*dops[k]*dops[l]
+            mo[pi]=((2*n.pi)**2.0)*dops[k]*dops[l] 
+            
+        else:
+            A[pi,0]=w*braggs[k,0]*braggs[l,0] # ku1*ku2
+            Ao[pi,0]=braggs[k,0]*braggs[l,0] # ku1*ku2
+                
+            A[pi,1]=w*braggs[k,1]*braggs[l,1] # kv1*kv2
+            Ao[pi,1]=braggs[k,1]*braggs[l,1] # kv1*kv2
+                
+            A[pi,2]=w*braggs[k,2]*braggs[l,2] # kw1*kw2
+            Ao[pi,2]=braggs[k,2]*braggs[l,2] # kw1*kw2
+                
+            A[pi,3]=w*(braggs[k,0]*braggs[l,1]+braggs[k,1]*braggs[l,0]) # ku1*kv2 + kv1*ku2
+            Ao[pi,3]=braggs[k,0]*braggs[l,1]+braggs[k,1]*braggs[l,0] # ku1*kv2 + kv1*ku2
+                
+            A[pi,4]=w*(braggs[k,0]*braggs[l,2]+braggs[k,2]*braggs[l,0]) # ku1*kw2 + kw1*ku2
+            Ao[pi,4]=braggs[k,0]*braggs[l,2]+braggs[k,2]*braggs[l,0] # ku1*kw2 + kw1*ku2
+                
+            A[pi,5]=w*(braggs[k,1]*braggs[l,2]+braggs[k,2]*braggs[l,1]) # kv1*kw2 + kw1*kv2
+            Ao[pi,5]=braggs[k,1]*braggs[l,2]+braggs[k,2]*braggs[l,1] # kv1*kw2 + kw1*kv2            
+            
+            m[pi]=w*((2*n.pi)**2.0)*dops[k]*dops[l]
+            mo[pi]=((2*n.pi)**2.0)*dops[k]*dops[l] 
+        
+#        A[pi,0]=w*braggs[k,0]*braggs[l,0] # ku1*ku2
+ #       Ao[pi,0]=braggs[k,0]*braggs[l,0] # ku1*ku2
+            
+  #      A[pi,1]=w*braggs[k,1]*braggs[l,1] # kv1*kv2
+   #     Ao[pi,1]=braggs[k,1]*braggs[l,1] # kv1*kv2
+            
+    #    A[pi,2]=w*braggs[k,2]*braggs[l,2] # kw1*kw2
+     #   Ao[pi,2]=braggs[k,2]*braggs[l,2] # kw1*kw2
+            
+      #  A[pi,3]=w*(braggs[k,0]*braggs[l,1]+braggs[k,1]*braggs[l,0]) # ku1*kv2 + kv1*ku2
+   #     Ao[pi,3]=braggs[k,0]*braggs[l,1]+braggs[k,1]*braggs[l,0] # ku1*kv2 + kv1*ku2
+            
+    #    A[pi,4]=w*(braggs[k,0]*braggs[l,2]+braggs[k,2]*braggs[l,0]) # ku1*kw2 + kw1*ku2
+     #   Ao[pi,4]=braggs[k,0]*braggs[l,2]+braggs[k,2]*braggs[l,0] # ku1*kw2 + kw1*ku2
+            
+      #  A[pi,5]=w*(braggs[k,1]*braggs[l,2]+braggs[k,2]*braggs[l,1]) # kv1*kw2 + kw1*kv2
+       # Ao[pi,5]=braggs[k,1]*braggs[l,2]+braggs[k,2]*braggs[l,1] # kv1*kw2 + kw1*kv2            
+        
+#        m[pi]=w*((2*n.pi)**2.0)*dops[k]*dops[l]
+ #       mo[pi]=((2*n.pi)**2.0)*dops[k]*dops[l]        
     try:
         ws=n.array(w)
         xhat=n.linalg.lstsq(A,m)[0]
@@ -394,10 +461,15 @@ def cfi(m,
     return(acf, err, n.mean(taus), n.mean(s_xs), n.mean(s_ys), n.mean(s_zs), n.mean(s_hs))
 
 
-def hor_acfs(meas,h0=90,dh=2,tau=0.0,s_h=n.arange(0,400.0,25.0), 
+def hor_acfs(meas,h0=90,dh=2,tau=0.0,s_h=n.arange(0,400.0,25.0),
+             LTz=True,
              ds_h=25.0, ds_z=1.0, dtau=900, title="hor_acf"):
     '''
      Horizontal distance spatial correlation function
+
+    h0 is the altitude
+    dh is the 
+
     '''
     n_lags=len(s_h)
     acfs=n.zeros([n_lags,6])
@@ -408,7 +480,7 @@ def hor_acfs(meas,h0=90,dh=2,tau=0.0,s_h=n.arange(0,400.0,25.0),
 
     shs=[]
     for li in range(n_lags):
-        acf,err,tau,sx,sy,sz,sh= cfi(meas, h0=h0, dh=dh, s_z=0.0, s_h=s_h[li], ds_h=ds_h, ds_z=ds_z, tau=tau,dtau=dtau, 
+        acf,err,tau,sx,sy,sz,sh= cfi(meas, h0=h0, dh=dh, s_z=0.0, s_h=s_h[li], ds_h=ds_h, ds_z=ds_z, tau=tau,dtau=dtau, LTz=LTz,
                                      horizontal_dist=True,min_dt=10.0,min_ds_h=10.0)
         shs.append(sh)
         print("s_h %1.2f"%(sh))
@@ -452,6 +524,7 @@ def plot_hor_acfs(shs,
     plt.title("Horizontal ACF\n$\Delta s_z=%1.1f$ km, $\Delta \\tau = %1.1f$ s $\Delta s_h=%1.1f$ km"%(ds_z,dtau,ds_h))   
  
     plt.subplot(122)
+    
     # estimate structure function
     # tbd, estimate zero lag with exp function
     sfu=2.0*zlag*acfs[0,0]-2.0*acfs[:,0]
