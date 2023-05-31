@@ -2,12 +2,11 @@
 #
 # Correlation Function Inversion
 #
-# find pairs using divide and conquer
-# 
-# Estimating the mesospheric neutral wind correlation function with different spatial and temporal lags
+# Estimating the mesospheric neutral wind velocity correlation function with different spatial and temporal lags
 # using meteor radar measurements.
 #
 # Juha Vierinen, 2018
+# Facundo Poblet, 2022 (LTz feature)
 #
 import numpy as n
 import h5py
@@ -42,7 +41,6 @@ sf_names=["uu","vv","ww","uv","uw","vw"]
 def vel(t,alt,lats,lons,times,rgs,v,dt,dh):
     '''
      evaluate mean wind without gradients. 
-     tbd: implement better interpolation and linear gradients for mean wind. 
     '''
     ti=n.array(n.round((t-times[0])/dt),dtype=n.int)
     hi=n.array(n.floor((alt-rgs[0])/dh),dtype=n.int)
@@ -197,7 +195,7 @@ def cfi(m,
         min_ds_h=0.0,
         min_dt=5.0,
         debug_plot=False,
-        LTz=False,
+        LTz=False,  # do we use longitudinal and transverse basis or not
         plot_thist=False):
     '''
     Calculate various lags. Use tree-like sorting of measurements to reduce the time
@@ -246,7 +244,8 @@ def cfi(m,
 
     n_times=int((n.max(t)-n.min(t))/(dtau))
     t0=n.min(t)
-    
+
+    # step through time with a time lag spacing
     for i in range(n_times):
         it0=i*dtau+t0
         if i == (n_times-1):
@@ -255,6 +254,7 @@ def cfi(m,
             it1=i*dtau+t0+2*dtau
 
         # filter heights
+        # we need two sets of meteors that are at the correct heights, and have the correct time displacement
         idx0=n.where( (heights > (h0-dh*0.5)) & (heights < (h0+dh*0.5)) & (t>it0) & (t<it1) )[0]
         idx1=n.where( (heights > (h0+s_z-0.5*dh)) & (heights < (h0+s_z+0.5*dh)) & (t > (it0+tau)) &  (t< (it1+tau)) )[0]
 
@@ -336,18 +336,14 @@ def cfi(m,
         w=1.0/countf(n.mod( (t[k]-t0)/3600,24.0 ))
         ws.append(w)
 
-
+        # If we are using the LT-basis, we need to rotate the Bragg vectors from the ENU to LTz coordinate system
         if LTz:
             bragg_k_L = braggs[k,0]*cosphi[pi] + braggs[k,1]*sinphi[pi] # rotate clockwise
             bragg_k_T = -braggs[k,0]*sinphi[pi] + braggs[k,1]*cosphi[pi] 
-#            bragg_k_L = braggs[k,0]*cosphi[pi] + -braggs[k,1]*sinphi[pi] # rotate counterclockwise
-#            bragg_k_T = braggs[k,0]*sinphi[pi] + braggs[k,1]*cosphi[pi] 
             bragg_k_z = braggs[k,2]
         
             bragg_l_L = braggs[l,0]*cosphi[pi] + braggs[l,1]*sinphi[pi] 
             bragg_l_T = -braggs[l,0]*sinphi[pi] + braggs[l,1]*cosphi[pi]
-#            bragg_l_L = braggs[l,0]*cosphi[pi] + -braggs[l,1]*sinphi[pi] 
-#            bragg_l_T = braggs[l,0]*sinphi[pi] + braggs[l,1]*cosphi[pi]
             bragg_l_z = braggs[l,2]
 
 
