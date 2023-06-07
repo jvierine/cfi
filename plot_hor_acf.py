@@ -75,13 +75,13 @@ all_acfs=n.array(all_acfs)
 print(all_acfs.shape)
 plt.subplot(121)
 days=n.arange(all_acfs.shape[0])
-plt.pcolormesh(s_h,t0s,all_acfs[:,:,0],vmin=0,vmax=100,cmap="jet")
+plt.pcolormesh(s_h,t0s,all_acfs[:,:,0],vmin=0,vmax=500,cmap="jet")
 plt.colorbar()
 plt.xlabel("Horizontal separation (km)")
 plt.ylabel("Date")
 plt.title("$R'_{LL}$")
 plt.subplot(122)
-plt.pcolormesh(s_h,t0s,all_acfs[:,:,1],vmin=0,vmax=100,cmap="jet")
+plt.pcolormesh(s_h,t0s,all_acfs[:,:,1],vmin=0,vmax=500,cmap="jet")
 plt.colorbar()
 plt.xlabel("Horizontal separation (km)")
 plt.ylabel("Date")
@@ -107,12 +107,17 @@ for i in range(all_acfs.shape[0]):
 
     n_avg=0.0
 
-    for j in range(-average,average):
-        if ( (j+i) >= 0) and ( (j+i) < all_acfs.shape[0]):
-            n_avg+=1.0
-            avg_Ruu+=all_acfs[j+i,2:21,0]
-            avg_Rvv+=all_acfs[j+i,2:21,1]
-
+    if average > 0:
+        for j in range(-average,average):
+            if ( (j+i) >= 0) and ( (j+i) < all_acfs.shape[0]):
+                n_avg+=1.0
+                avg_Ruu+=all_acfs[j+i,2:21,0]
+                avg_Rvv+=all_acfs[j+i,2:21,1]
+    else:
+        n_avg=1.0
+        avg_Ruu+=all_acfs[i,2:21,0]
+        avg_Rvv+=all_acfs[i,2:21,1]
+        
     avg_Ruu=avg_Ruu/n_avg
     avg_Rvv=avg_Rvv/n_avg    
     
