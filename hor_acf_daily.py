@@ -38,6 +38,7 @@ def avg_hor_acfs(md, # data
     # daily averages of horizontal correlation functions, save them for post processing
     #
     os.system("mkdir -p %s/%s"%(c.data_directory,name))
+    os.system("mkdir -p %s/%s/tmp"%(c.data_directory,name))    
 
     n_lags=len(s_h)
     all_acfs=[]
@@ -47,8 +48,18 @@ def avg_hor_acfs(md, # data
     
     # we need a bit of extra meteors before and after for the mean wind.
     dw=md.read_data(t0=t0-2*3600,t1=t1+2*3600)
-    #d=md.read_data(t0=t0,t1=t1)    
-    n_meas=len(dw["t"])
+
+    if False:
+        # a little debug plot to show what meteors are read
+        plt.subplot(121)
+        plt.plot((dw["t"]-t0)/24/3600.0,dw["heights"],".")
+        plt.subplot(122)
+        plt.plot(dw["lats"],dw["lons"],".")
+        plt.tight_layout()
+        plt.show()
+    
+    d=md.read_data(t0=t0,t1=t1)    
+    n_meas=len(d["t"])
     print("n_meteors %d"%(n_meas))
     if n_meas > 100:
         #times,times_h,v,ve,rgs,lat0,lon0,dt,dh,resid=
@@ -57,47 +68,20 @@ def avg_hor_acfs(md, # data
                               dt=mean_wind_time_avg,
                               dh=1.0,
                               dz=3.0,
-                              max_alt=105,
-                              min_alt=78,
+                              max_alt=110,
+                              min_alt=70,
                               dcos_thresh=dcos_thresh,
-                              ofname="res/tmp-%03d.h5"%(rank),
-                              outlier_sigma=4,
+                              ofname="%s/%s/tmp/tmp-%05d.h5"%(c.data_directory,name,rank),
+                              outlier_sigma=4,           # don't be overly strict about removing measurements that don't conform with the mean wind
                               gradients=False,
                               debug=False)
 
-        # only use ones that are not outliers to wind model
-        # and that are in the correct time range
-        gidx=mwr["good_idx"]
-        dw["t"]=dw["t"][gidx]
-        dw["alpha_norm"]=dw["alpha_norm"][gidx]
-        dw["braggs"]=dw["braggs"][gidx,:]
-        dw["dcos"]=dw["dcos"][gidx,:]
-        dw["dop_errs"]=dw["dop_errs"][gidx]
-        dw["dops"]=dw["dops"][gidx]
-        dw["heights"]=dw["heights"][gidx]
-        dw["lats"]=dw["lats"][gidx]
-        dw["lons"]=dw["lons"][gidx]
-        dw["link"]=dw["link"][gidx]
-        
-        # then filter for those in correct time range, because we had a broader time range when estimating the mean wind
-        gidx=n.where( (dw["t"] > t0) & (dw["t"] < t1))[0]
-        dw["t"]=dw["t"][gidx]
-        dw["alpha_norm"]=dw["alpha_norm"][gidx]
-        dw["braggs"]=dw["braggs"][gidx,:]
-        dw["dcos"]=dw["dcos"][gidx,:]
-        dw["dop_errs"]=dw["dop_errs"][gidx]
-        dw["dops"]=dw["dops"][gidx]
-        dw["heights"]=dw["heights"][gidx]
-        dw["lats"]=dw["lats"][gidx]
-        dw["lons"]=dw["lons"][gidx]
-        dw["link"]=dw["link"][gidx]
-        
-        
-        meas=cfi.get_meas(meas_file=dw,
+        #  note that outlier removal is done in cfi.get_meas
+        meas=cfi.get_meas(meas_file=d,
                           mean_rem=remove_mean,
                           plot_dops=False,
                           dcos_thresh=dcos_thresh,
-                          mean_wind_file="res/tmp-%03d.h5"%(rank),
+                          mean_wind_file="%s/%s/tmp/tmp-%05d.h5"%(c.data_directory,name,rank),
                           data='mmaria')
         
         ih0,idtau,dis_h,acfs,errs,ishs,si_h,names=cfi.hor_acfs(meas,
@@ -147,6 +131,7 @@ for h0 in c.horizontal_correlation_heights:
         
         # 900 second time step for mean wind, but the mean wind averaging window is four hours
         mean_wind_time = n.linspace(t0,t1,num=int(96*c.horizontal_correlation_n_days))
+        print("averaging correlation function of %d days"%(c.horizontal_correlation_n_days))
         avg_hor_acfs(md,
                      dcos_thresh=c.dcos_thresh,
                      mean_wind_time_avg=4*3600.0,

@@ -128,8 +128,8 @@ def get_meas(meas_file="res/simone_nov2018_multilink_juha_30min_1000m.h5",
         rgs=n.copy(hm["rgs"][()])
         v=n.copy(hm["v"][()])
         dt=n.copy(hm["dt"][()])
-        print(dt)
-        print(v.shape)
+#        print(dt)
+ #       print(v.shape)
         dh=n.copy(hm["dh"][()])
         mlat0=n.copy(hm["lat0"][()])
         mlon0=n.copy(hm["lon0"][()])
@@ -335,7 +335,7 @@ def cfi(m,
 
         w=1.0/countf(n.mod( (t[k]-t0)/3600,24.0 ))
         ws.append(w)
-
+        
         # If we are using the LT-basis, we need to rotate the Bragg vectors from the ENU to LTz coordinate system
         if LTz:
             bragg_k_L = braggs[k,0]*cosphi[pi] + braggs[k,1]*sinphi[pi] # rotate clockwise
@@ -411,7 +411,8 @@ def cfi(m,
 #        m[pi]=w*((2*n.pi)**2.0)*dops[k]*dops[l]
  #       mo[pi]=((2*n.pi)**2.0)*dops[k]*dops[l]        
     try:
-        ws=n.array(w)
+#        ws=n.array(w)
+        ws=n.array(ws)        
         xhat=n.linalg.lstsq(A,m)[0]
         
         # inverse scale weights

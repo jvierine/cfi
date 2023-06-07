@@ -75,12 +75,14 @@ all_acfs=n.array(all_acfs)
 print(all_acfs.shape)
 plt.subplot(121)
 days=n.arange(all_acfs.shape[0])
-plt.pcolormesh(s_h,t0s,all_acfs[:,:,0],vmin=0,vmax=400)
+plt.pcolormesh(s_h,t0s,all_acfs[:,:,0],vmin=0,vmax=100,cmap="jet")
+plt.colorbar()
 plt.xlabel("Horizontal separation (km)")
 plt.ylabel("Date")
 plt.title("$R'_{LL}$")
 plt.subplot(122)
-plt.pcolormesh(s_h,t0s,all_acfs[:,:,1],vmin=0,vmax=400)
+plt.pcolormesh(s_h,t0s,all_acfs[:,:,1],vmin=0,vmax=100,cmap="jet")
+plt.colorbar()
 plt.xlabel("Horizontal separation (km)")
 plt.ylabel("Date")
 plt.title("$R'_{TT}$")
@@ -125,7 +127,7 @@ for i in range(all_acfs.shape[0]):
 eps_uu=n.array(eps_uu)
 eps_vv=n.array(eps_vv)
 plt.plot(t0s,eps_uu*1e3,".")
-plt.ylim([0,100])
+plt.ylim([-10,100])
 plt.xlabel("Date")
 plt.ylabel("Dissipation rate (mW/kg)")
 plt.tight_layout()
@@ -141,62 +143,4 @@ plt.tight_layout()
 
 plt.show()
 
-#exit(0)
-all_errs=n.array(all_errs)
-all_sh=n.array(all_sh)
-err_vars=n.zeros([len(s_h),6])
-acfs=n.zeros([len(s_h),6])
-s_h[:]=0.0
-for i in range(len(s_h)):
-    s_h[i]=n.mean(all_sh[:,i])
-    for ci in range(6):
-        err_vars[i,ci]=n.var(all_acfs[:,i,ci])
-        ws=0.0
-        for mi in range(int(n_avg)):
-            if n.sum(n.isnan(all_acfs[mi,i,ci]))== 0:
-                w=1.0/all_errs[mi,i,ci]
-                ws+=w
-                acfs[i,ci]+=w*all_acfs[mi,i,ci]
-            else:
-                print("nans")
-        acfs[i,ci]=(1.0/ws)*acfs[i,ci]
-
-# todo: fit the zero lag using an exp function
-
-
-
-        
-#print(acfs)
-#plt.loglog(s_h,2.0*acfs[1,0] - 2*acfs[:,0])
-#plt.show()
-
-# fix zero lag!
-#acfs[0,:]=acfs[1,:]
-                    
-names=["$G_{uu}$","$G_{vv}$","$G_{ww}$",
-       "$G_{uv}$","$G_{uw}$","$G_{vw}$"]
-colors=["C0","C1","C2","C3","C4","C5"]
-cfi.plot_hor_acfs(shs=s_h,
-                  names=names,
-                  acfs=acfs,
-                  ds_z=1.0,
-                  dtau=dtau,
-                  ds_h=ds_h,
-                  err_vars=err_vars,
-                  colors=colors,
-                  zlag=1.1,
-                  n_avg=n_avg)
-
-    # plt.savefig("C:/Users/OleK/Master_thesis/figs/fig_%s.png"%(name))
-    # ho=h5py.File("res/%s.h5"%(name),"w")
-    # ho["acf"]=acfs
-    # ho["s_h"]=s_h
-    # ho["err_var"]=err_vars/n.sqrt(n_avg)
-    # ho["h0"]=h0
-    # ho["dtau"]=dtau
-    # ho["ds_h"]=ds_h
-    # ho.close()
-    
-    
-    
     

@@ -26,6 +26,10 @@ debug_epsilon_fit=False
 if "debug_epsilon_fit" in c["cfi"].keys():
     debug_epsilon_fit=bool(json.loads(c["cfi"]["debug_epsilon_fit"]))
 
+debug_cfi_meteors=False
+if "debug_cfi_meteors" in c["cfi"].keys():
+    debug_cfi_meteors=bool(json.loads(c["cfi"]["debug_cfi_meteors"]))
+    
 horizontal_correlation_n_days=1
 if "horizontal_correlation_n_days" in c["cfi"].keys():
     horizontal_correlation_n_days=float(json.loads(c["cfi"]["horizontal_correlation_n_days"]))
