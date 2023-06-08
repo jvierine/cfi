@@ -25,6 +25,10 @@ if "dcos_thresh" in c["cfi"].keys():
 debug_epsilon_fit=False
 if "debug_epsilon_fit" in c["cfi"].keys():
     debug_epsilon_fit=bool(json.loads(c["cfi"]["debug_epsilon_fit"]))
+    
+debug_monthly_epsilon=False
+if "debug_monthly_epsilon" in c["cfi"].keys():
+    debug_monthly_epsilon=bool(json.loads(c["cfi"]["debug_monthly_epsilon"]))
 
 debug_cfi_meteors=False
 if "debug_cfi_meteors" in c["cfi"].keys():

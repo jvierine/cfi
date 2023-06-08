@@ -62,7 +62,7 @@ def avg_hor_acfs(md, # data
     n_meas=len(d["t"])
     print("n_meteors %d"%(n_meas))
     if n_meas > 100:
-        #times,times_h,v,ve,rgs,lat0,lon0,dt,dh,resid=
+
         mwr=mw.mean_wind_grad(meas=dw,
                               times=mean_wind_time,
                               dt=mean_wind_time_avg,
