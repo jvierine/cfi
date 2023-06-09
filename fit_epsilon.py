@@ -24,10 +24,12 @@ def fit_epsilon0(s,R,
         return(n.sum(n.abs(mf-R)**2))
         
     xhat=sio.fmin(ss,[e0,R[0]])
+    xhat[0]=xhat[0]+1e-3
+    xhat=sio.fmin(ss,xhat)
 
+    # this is all uncertainty estimation
     resid_std_est=n.sqrt(n.mean(n.abs(model(xhat)-R)**2.0))
 
-    # estimate errors
     xhat_dx0=n.copy(xhat)
     xhat_dx0[0]=xhat_dx0[0]+1e-6
     xhat_dx1=n.copy(xhat)
@@ -39,13 +41,17 @@ def fit_epsilon0(s,R,
         
     J=n.zeros([len(R),2])
     Sinv=n.zeros([len(R),len(R)])
+    # numerical derivative around best fit 
     J[:,0]=(model(xhat_dx0)-model(xhat))/1e-6
     J[:,1]=(model(xhat_dx1)-model(xhat))/1.0
+    # populate measurement error covariance inversted
     for i in range(len(R)):
         Sinv[i,i]=1.0/err_std[i]**2.0
+    # error covariance  \Sigma_p = (J^T S^{-1} J)^{-1}
     C=n.linalg.inv(n.dot(n.dot(n.transpose(J),Sinv),J))
     eps_std=n.sqrt(C[0,0])
     r0_std=n.sqrt(C[1,1])
+    # done with uncertainty estimation
 
     if debug:
         plt.plot(s,model(xhat))
@@ -68,4 +74,4 @@ def fit_epsilon0(s,R,
     resid=R-model(xhat)
 
     
-    return({"xhat":xhat,"eps_std":eps_std,"r0_std":r0_std,"resid":resid})
+    return({"xhat":xhat,"eps_std":eps_std,"r0_std":r0_std,"resid":resid,"err_std":err_std,"model":model(xhat)})
