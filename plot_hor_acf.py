@@ -329,9 +329,10 @@ def estimate_epsilons():
     # scatter plot to explore relationship between kinetic energy in
     # wind and dissipation-rate
 #    plt.subplot(221)
-    zero_lags=R0S.flatten()
-    epsilon=ED.flatten()
+    zero_lags=n.transpose(R0S).flatten()
+    epsilon=n.transpose(ED).flatten()
     heights=hh.flatten()
+    months=mm.flatten()
 
     if False:
         gidx=n.where( (heights > 87) & (heights < 93) )[0]
@@ -351,14 +352,18 @@ def estimate_epsilons():
         ax.set_xlabel("$R_{LL}(0)$ (m$^2$/s$^2$)")
         ax.set_ylabel("$\\varepsilon$ (mW/kg)")
         plt.show()
-        
-    ho=h5py.File("tmp_germany.h5","w")
+
+    os.system("mkdir -p %s/eps"%(c.data_directory))
+    ho=h5py.File("%s/eps/epsfit.h5"%(c.data_directory),"w")
     ho["R0"]=zero_lags
     ho["epsilon"]=epsilon
     ho["heights"]=heights
+    ho["months"]=months
+    ho["R0m"]=R0S
+    ho["ED"]=ED    
+    ho["hh"]=hh
+    ho["mm"]=mm   
     ho.close()
 
-
-    
 if __name__ == "__main__":
     estimate_epsilons()
