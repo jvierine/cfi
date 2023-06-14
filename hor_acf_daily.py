@@ -37,51 +37,53 @@ def avg_hor_acfs(md, # data
     #
     # daily averages of horizontal correlation functions, save them for post processing
     #
-    os.system("mkdir -p %s/%s"%(c.data_directory,name))
-    os.system("mkdir -p %s/%s/tmp"%(c.data_directory,name))    
+    os.system("mkdir -p %s/%s/%s"%(c.data_directory,c.data_prefix,name))
+    os.system("mkdir -p %s/%s/%s/tmp"%(c.data_directory,c.data_prefix,name))    
 
     n_lags=len(s_h)
     all_acfs=[]
     all_errs=[]
     
     n_avg=0.0
-    
-    # we need a bit of extra meteors before and after for the mean wind.
-    dw=md.read_data(t0=t0-2*3600,t1=t1+2*3600)
 
-    if False:
-        # a little debug plot to show what meteors are read
-        plt.subplot(121)
-        plt.plot((dw["t"]-t0)/24/3600.0,dw["heights"],".")
-        plt.subplot(122)
-        plt.plot(dw["lats"],dw["lons"],".")
-        plt.tight_layout()
-        plt.show()
+    dw=None
+    if remove_mean:
+        # we need a bit of extra meteors before and after for the mean wind.
+        dw=md.read_data(t0=t0-2*3600,t1=t1+2*3600)
+
+        if False:
+            # a little debug plot to show what meteors are read
+            plt.subplot(121)
+            plt.plot((dw["t"]-t0)/24/3600.0,dw["heights"],".")
+            plt.subplot(122)
+            plt.plot(dw["lats"],dw["lons"],".")
+            plt.tight_layout()
+            plt.show()
     
     d=md.read_data(t0=t0,t1=t1)    
     n_meas=len(d["t"])
     print("n_meteors %d"%(n_meas))
     if n_meas > 100:
-
-        mwr=mw.mean_wind_grad(meas=dw,
-                              times=mean_wind_time,
-                              dt=mean_wind_time_avg,
-                              dh=1.0,
-                              dz=3.0,
-                              max_alt=110,
-                              min_alt=70,
-                              dcos_thresh=dcos_thresh,
-                              ofname="%s/%s/tmp/tmp-%05d.h5"%(c.data_directory,name,rank),
-                              outlier_sigma=4,           # don't be overly strict about removing measurements that don't conform with the mean wind
-                              gradients=False,
-                              debug=False)
+        if remove_mean:
+            mwr=mw.mean_wind_grad(meas=dw,
+                                  times=mean_wind_time,
+                                  dt=mean_wind_time_avg,
+                                  dh=1.0,
+                                  dz=3.0,
+                                  max_alt=110,
+                                  min_alt=70,
+                                  dcos_thresh=dcos_thresh,
+                                  ofname="%s/%s/%s/tmp/tmp-%05d.h5"%(c.data_directory,c.data_prefix,name,rank),
+                                  outlier_sigma=4,           # don't be overly strict about removing measurements that don't conform with the mean wind
+                                  gradients=False,
+                                  debug=False)
 
         #  note that outlier removal is done in cfi.get_meas
         meas=cfi.get_meas(meas_file=d,
                           mean_rem=remove_mean,
                           plot_dops=False,
                           dcos_thresh=dcos_thresh,
-                          mean_wind_file="%s/%s/tmp/tmp-%05d.h5"%(c.data_directory,name,rank),
+                          mean_wind_file="%s/%s/%s/tmp/tmp-%05d.h5"%(c.data_directory,c.data_prefix,name,rank),
                           data='mmaria')
         
         ih0,idtau,dis_h,acfs,errs,ishs,si_h,names=cfi.hor_acfs(meas,
@@ -91,10 +93,10 @@ def avg_hor_acfs(md, # data
                                                                ds_h=ds_h,
                                                                s_h=s_h,
                                                                dtau=dtau,
-                                                               LTz=True,
+                                                               LTz=c.horizontal_correlation_LTz,
                                                                title=name)
 
-        out_fname="%s/%s/hacf_res-%06d.h5"%(c.data_directory,name,t0)
+        out_fname="%s/%s/%s/hacf_res-%06d.h5"%(c.data_directory,c.data_prefix,name,t0)
         os.system("rm -f %s"%(out_fname))        
         print("writing %s"%(out_fname))
         ho=h5py.File(out_fname,"w")
@@ -139,11 +141,12 @@ for h0 in c.horizontal_correlation_heights:
                      h0=h0,
                      dh=c.horizontal_correlation_dh, # look for meteors between [h0-dh/2,h0+dh/2]
                      ds_h=25.0,            # horizontal distance resolution
-                     dtau=600.0,           # lag time resolution
+                     dtau=c.horizontal_correlation_dtau,           # lag time resolution
                      s_h=n.arange(0.0,400.0,12.5),
                      ds_z=1,               # vertical lag resolution
                      t0=t0,
                      t1=t1,
+                     remove_mean=c.high_pass_filter,
                      name=name)
 
 

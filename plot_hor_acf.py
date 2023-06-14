@@ -15,6 +15,8 @@ import mean_wind_est as mw
 import glob
 import stuffr
 
+import os
+
 # 600 s, 90 km 4 hour wind removed
 #name="daily"
 
@@ -55,7 +57,7 @@ def estimate_epsilons():
         name="hcor_%1.2f"%(h0)#94.00"
         print("calculating %s"%(name))
 
-        fl=glob.glob("%s/%s/*.h5"%(c.data_directory,name))
+        fl=glob.glob("%s/%s/%s/*.h5"%(c.data_directory,c.data_prefix,name))
         fl.sort()
         if len(fl) == 0:
             # if no results yet, then skip
@@ -118,14 +120,25 @@ def estimate_epsilons():
             ax3=fig.add_subplot(gs[2,0:2])
             cbax=fig.add_subplot(gs[0,0])
 #            plt.subplot(221)
+
+
+
             days=n.arange(all_acfs.shape[0])
-            im=ax1.pcolormesh(s_h[1:],t0s,all_acfs[:,1:,0],vmin=0,vmax=500,cmap="jet")
-            cb=plt.colorbar(im,cax=cbax,orientation="horizontal",ticklocation="top")
-            cb.set_label("$R_{LL}$ (m$^2$/s$^2$)")
-            #ax1.colorbar()
-#            plt.colorbar(p,cax=ax1)
-            ax1.set_xlabel("$s$ (km)")
-            ax1.set_ylabel("Date")
+            use_colormesh=True
+            if use_colormesh:
+                im=ax1.pcolormesh(s_h[1:],t0s,all_acfs[:,1:,1],cmap="jet")
+                cb=plt.colorbar(im,cax=cbax,orientation="horizontal",ticklocation="top")
+                cb.set_label("$R_{LL}$ (m$^2$/s$^2$)")
+                #ax1.colorbar()
+                #            plt.colorbar(p,cax=ax1)
+                ax1.set_xlabel("$s$ (km)")
+                ax1.set_ylabel("Date")
+            else:
+ #               for di in range(all_acfs.shape[0]):
+#                    ax1.plot(s_h[:],all_acfs[di,:,0],".")
+                ax1.plot(s_h,n.mean(all_acfs[:,:,0],axis=0))
+                ax1.plot(s_h,n.mean(all_acfs[:,:,1],axis=0))                
+                    
 #            ax1.set_title("$R_{LL}$")
 #            plt.title("%1.0f km"%(h))
 #            plt.colorbar()
@@ -186,8 +199,8 @@ def estimate_epsilons():
                 avg_Rvv+=all_acfs[i,min_lag:max_lag,1]
 
             avg_Ruu=avg_Ruu/n_avg
-            avg_Rvv=avg_Rvv/n_avg    
-
+            avg_Rvv=avg_Rvv/n_avg
+            
             fr=fit_epsilon.fit_epsilon0(s_h[min_lag:max_lag],avg_Ruu,debug=c.debug_epsilon_fit)
 
             # plot equinox and summer
@@ -201,7 +214,7 @@ def estimate_epsilons():
                     ax2.plot(s_h[min_lag:max_lag],fr["model"],label="$\epsilon=%1.0f\pm%1.1f$ mW/kg"%(fr["xhat"][0]*1e3,2*fr["eps_std"]*1e3),color=color)
                     ax2.errorbar(s_h[min_lag:max_lag],avg_Ruu,yerr=2*fr["err_std"],fmt=".",color=color)
                     ax2.grid()
-                    ax2.set_ylim([0,350])
+#                    ax2.set_ylim([0,350])
                     #ax2.set_title("
                     ax2.set_title("%1.0f km"%(h0))
                #     ax2.set_title("$\epsilon=%1.2f \pm %1.2f$ mW/kg"%(fr["xhat"][0]*1e3,fr["eps_std"]*1e3))
@@ -251,7 +264,7 @@ def estimate_epsilons():
             ax2.legend()
 #            plt.subplot(223)
             t00=n.array(t00)
-            sidx=n.arange(0,len(t00),7)
+            sidx=n.arange(0,len(t00),1)
             ax3.errorbar( 12*(t00[sidx]-n.min(t00))/(24*3600*365) ,eps_uu[sidx]*1e3, yerr=2*eps_uu_std[sidx]*1e3 ,fmt=".",color="black")
             ax3.set_ylabel("$\\varepsilon$ (mW/kg)")
             ax3.set_xlabel("Month")
@@ -353,8 +366,8 @@ def estimate_epsilons():
         ax.set_ylabel("$\\varepsilon$ (mW/kg)")
         plt.show()
 
-    os.system("mkdir -p %s/eps"%(c.data_directory))
-    ho=h5py.File("%s/eps/epsfit.h5"%(c.data_directory),"w")
+    os.system("mkdir -p %s/%s/eps"%(c.data_directory,c.data_prefix))
+    ho=h5py.File("%s/%s/eps/epsfit.h5"%(c.data_directory,c.data_prefix),"w")
     ho["R0"]=zero_lags
     ho["epsilon"]=epsilon
     ho["heights"]=heights

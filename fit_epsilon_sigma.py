@@ -5,8 +5,9 @@ import scipy.optimize as sio
 import scipy.interpolate as sint
 from matplotlib.gridspec import GridSpec
 import cfi_config as c
+import os
 
-fname="%s/eps/epsfit.h5"%(c.data_directory)
+fname="%s/%s/eps/epsfit.h5"%(c.data_directory,c.data_prefix)
 h=h5py.File(fname,"r")
 R0=n.sqrt(n.copy(h["R0"][()]))
 eps=n.copy(h["epsilon"][()])
@@ -16,7 +17,7 @@ mnt=n.copy(h["months"][()])
 
 plt.pcolormesh(h["mm"][()],h["hh"][()],n.transpose(n.sqrt(h["R0m"][()])**3.0/h["ED"][()]),vmin=0,vmax=1000,cmap="jet")
 cb=plt.colorbar()
-cb.set_label("$L_{ST} = \sigma_h^3/\varepsilon$ (km)")
+cb.set_label("$L_{ST} = \sigma_h^3/\\varepsilon$ (km)")
 plt.xlabel("Time (months)")
 plt.ylabel("Height (km)")
 plt.show()

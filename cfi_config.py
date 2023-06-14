@@ -17,6 +17,10 @@ lon=float(json.loads(c["cfi"]["lon"]))
 data_directory=json.loads(c["cfi"]["data_directory"])
 plot_directory=json.loads(c["cfi"]["plot_directory"])
 
+data_prefix=""
+if "data_prefix" in c["cfi"].keys():
+    data_prefix=json.loads(c["cfi"]["data_prefix"])
+
 # some parameters with default values
 dcos_thresh=0.8
 if "dcos_thresh" in c["cfi"].keys():
@@ -26,6 +30,14 @@ debug_epsilon_fit=False
 if "debug_epsilon_fit" in c["cfi"].keys():
     debug_epsilon_fit=bool(json.loads(c["cfi"]["debug_epsilon_fit"]))
     
+high_pass_filter=False
+if "high_pass_filter" in c["cfi"].keys():
+    high_pass_filter=bool(json.loads(c["cfi"]["high_pass_filter"]))
+
+horizontal_correlation_LTz=True
+if "horizontal_correlation_LTz" in c["cfi"].keys():
+    horizontal_correlation_LTz=bool(json.loads(c["cfi"]["horizontal_correlation_LTz"]))
+
 debug_monthly_epsilon=False
 if "debug_monthly_epsilon" in c["cfi"].keys():
     debug_monthly_epsilon=bool(json.loads(c["cfi"]["debug_monthly_epsilon"]))
@@ -48,6 +60,10 @@ if "epsilon_hlimit" in c["cfi"].keys():
     
 horizontal_correlation_heights=n.array(json.loads(c["cfi"]["horizontal_correlation_heights"]))
 horizontal_correlation_dh=float(json.loads(c["cfi"]["horizontal_correlation_dh"]))
+
+horizontal_correlation_dtau=600
+if "horizontal_correlation_dtau" in c["cfi"].keys():
+    horizontal_correlation_dtau=float(json.loads(c["cfi"]["horizontal_correlation_dtau"]))
 
 
 #data_directory="/data0/SIMONe_multilink/JRO"
