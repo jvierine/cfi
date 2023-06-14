@@ -36,6 +36,8 @@ def estimate_epsilons():
     ED[:,:]=n.nan
     EE=n.zeros([365,n_heights])
     EE[:,:]=n.nan
+    R0S=n.zeros([365,n_heights])
+    R0S[:,:]=n.nan
 
     hidx=n.argsort(c.horizontal_correlation_heights)
     heights=c.horizontal_correlation_heights[hidx]
@@ -150,6 +152,7 @@ def estimate_epsilons():
         average = c.horizontal_correlation_post_avg
 
         eps_uu=[]
+        ke_uu=[]        
         eps_vv=[]
         eps_uu_std=[]
         eps_vv_std=[]        
@@ -200,7 +203,7 @@ def estimate_epsilons():
                     ax2.grid()
                     ax2.set_ylim([0,350])
                     #ax2.set_title("
-#                    ax2.set_title("%1.0f km"%(h0))
+                    ax2.set_title("%1.0f km"%(h0))
                #     ax2.set_title("$\epsilon=%1.2f \pm %1.2f$ mW/kg"%(fr["xhat"][0]*1e3,fr["eps_std"]*1e3))
                     #        plt.plot(s,R,".")
                     ax2.set_xlabel("$s$ (km)")
@@ -218,9 +221,17 @@ def estimate_epsilons():
             xhat_vv=fr["xhat"]
             res_vv=fr["resid"]
             resids_vv[i,:]=res_vv
-            
-            eps_uu.append(xhat_uu[0])
-            eps_vv.append(xhat_vv[0])
+
+            # if the zero-lag estimate is more than the std
+            # otherwise consider the result to be too noisy
+            if fr["xhat"][1] > 2*fr["err_std"][0]:
+                eps_uu.append(xhat_uu[0])
+                eps_vv.append(xhat_vv[0])
+                ke_uu.append(xhat_uu[1])
+            else:
+                eps_uu.append(n.nan)
+                eps_vv.append(n.nan)
+                ke_uu.append(n.nan)
 
             eps_month[int(t0s[i].month-1)]+=xhat_uu[0]*1e3
             eps_count[int(t0s[i].month-1)]+=1.0
@@ -229,8 +240,11 @@ def estimate_epsilons():
         eps_uu=n.array(eps_uu)
         eps_uu_std=n.array(eps_uu_std)        
         eps_vv=n.array(eps_vv)
+        ke_uu=n.array(ke_uu)
 
+        
         ED[n.array(n.floor(365*(t00-n.min(t00))/(24*3600*365)),dtype=n.int),rhidx[hi]]=eps_uu*1e3
+        R0S[n.array(n.floor(365*(t00-n.min(t00))/(24*3600*365)),dtype=n.int),rhidx[hi]]=ke_uu
         EE[n.array(n.floor(365*(t00-n.min(t00))/(24*3600*365)),dtype=n.int),rhidx[hi]]=eps_uu_std*1e3
         
         if c.debug_monthly_epsilon:
@@ -287,14 +301,63 @@ def estimate_epsilons():
     months=12*n.arange(365)/365
     #heights
     mm,hh=n.meshgrid(months,heights)
+    plt.subplot(211)
     plt.pcolormesh(mm,hh,n.transpose(ED),vmin=0,vmax=50,cmap="jet")
-    plt.ylim([79,97])
+    plt.ylim(c.epsilon_hlimit)
     plt.xlabel("Month")
     plt.ylabel("Height (km)")
     cb=plt.colorbar()
     cb.set_label("$\\varepsilon$ (mW/kg)")
+
+    plt.subplot(212)    
+    plt.pcolormesh(mm,hh,n.transpose(R0S),vmin=0,vmax=400,cmap="jet")
+    plt.ylim(c.epsilon_hlimit)
+    plt.xlabel("Month")
+    plt.ylabel("Height (km)")
+    cb=plt.colorbar()
+    cb.set_label("$R_{LL}(0)$ (m$^2$/s$^2$)")
+    
+    #plt.colorbar()
+    
+#    plt.subplot(223)    
+
+ #   plt.pcolormesh(mm,hh,n.transpose(R0S/ED),vmin=0,vmax=100,cmap="jet")
+  #  plt.colorbar()
     plt.tight_layout()
     plt.show()
+
+    # scatter plot to explore relationship between kinetic energy in
+    # wind and dissipation-rate
+#    plt.subplot(221)
+    zero_lags=R0S.flatten()
+    epsilon=ED.flatten()
+    heights=hh.flatten()
+
+    if False:
+        gidx=n.where( (heights > 87) & (heights < 93) )[0]
+
+        fig,ax=plt.subplots()
+        ax.scatter(zero_lags[gidx],epsilon[gidx],c=heights[gidx],cmap="jet")
+        s2=n.linspace(50,600,num=100)
+        ax.plot(s2,(1/50)*s2,label="$\\varepsilon = \alpha \sigma_{w}^2$")  # this is the lubken (1997) or Weinstock (1980)
+        ax.plot(s2,(1/5)*s2**(2/3),label="$\\varepsilon = \beta \sigma_{w}^3$") # from Chen (1974)
+        ax.plot(s2,(1/50)*s2**(2),label="$\\varepsilon = \beta \sigma_{w}^4$") # wtf?
+        # \sigma^3 = \beta \epsilon | ()^{2/3} -> \sigma^2 = \beta^{2/3}  \epsilon^{2/3}
+        ax.legend()
+        ax.set_xscale("log")
+        ax.set_yscale("log")
+        ax.set_xlim([50,600])
+        ax.set_ylim([0.5,60])
+        ax.set_xlabel("$R_{LL}(0)$ (m$^2$/s$^2$)")
+        ax.set_ylabel("$\\varepsilon$ (mW/kg)")
+        plt.show()
+        
+    ho=h5py.File("tmp_germany.h5","w")
+    ho["R0"]=zero_lags
+    ho["epsilon"]=epsilon
+    ho["heights"]=heights
+    ho.close()
+
 
     
 if __name__ == "__main__":

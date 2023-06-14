@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue May  5 13:13:54 2020
-
-@author: OleK
-"""
-
 import numpy as n
 import cfi_config as c
 

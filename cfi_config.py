@@ -41,6 +41,10 @@ if "horizontal_correlation_n_days" in c["cfi"].keys():
 horizontal_correlation_post_avg=1
 if "horizontal_correlation_post_avg" in c["cfi"].keys():
     horizontal_correlation_post_avg=int(json.loads(c["cfi"]["horizontal_correlation_post_avg"]))
+
+epsilon_hlimit=[70,110]
+if "epsilon_hlimit" in c["cfi"].keys():
+    epsilon_hlimit=n.array(json.loads(c["cfi"]["epsilon_hlimit"]))
     
 horizontal_correlation_heights=n.array(json.loads(c["cfi"]["horizontal_correlation_heights"]))
 horizontal_correlation_dh=float(json.loads(c["cfi"]["horizontal_correlation_dh"]))
