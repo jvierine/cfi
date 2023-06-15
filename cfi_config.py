@@ -45,7 +45,8 @@ if "debug_monthly_epsilon" in c["cfi"].keys():
 debug_cfi_meteors=False
 if "debug_cfi_meteors" in c["cfi"].keys():
     debug_cfi_meteors=bool(json.loads(c["cfi"]["debug_cfi_meteors"]))
-    
+
+
 horizontal_correlation_n_days=1
 if "horizontal_correlation_n_days" in c["cfi"].keys():
     horizontal_correlation_n_days=float(json.loads(c["cfi"]["horizontal_correlation_n_days"]))
@@ -65,6 +66,18 @@ horizontal_correlation_dtau=600
 if "horizontal_correlation_dtau" in c["cfi"].keys():
     horizontal_correlation_dtau=float(json.loads(c["cfi"]["horizontal_correlation_dtau"]))
 
+horizontal_fit_synoptic=False
+if "horizontal_fit_synoptic" in c["cfi"].keys():
+    horizontal_fit_synoptic=bool(json.loads(c["cfi"]["horizontal_fit_synoptic"]))
+
+
+horizontal_fit_min_lag=4
+horizontal_fit_max_lag=18
+
+if "horizontal_fit_max_lag" in c["cfi"].keys():
+    horizontal_fit_max_lag=int(json.loads(c["cfi"]["horizontal_fit_max_lag"]))
+if "horizontal_fit_min_lag" in c["cfi"].keys():
+    horizontal_fit_min_lag=int(json.loads(c["cfi"]["horizontal_fit_min_lag"]))
 
 #data_directory="/data0/SIMONe_multilink/JRO"
 #plot_directory="/data0/SIMONe_multilink/JRO/"

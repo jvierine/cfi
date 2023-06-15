@@ -179,8 +179,8 @@ def estimate_epsilons():
         eps_count=n.zeros(12)
         t0_doy=n.zeros(all_acfs.shape[0])
 
-        min_lag=4
-        max_lag=18
+        min_lag=c.horizontal_fit_min_lag#4
+        max_lag=c.horizontal_fit_max_lag#18
         n_lags=max_lag-min_lag
         
         resids_uu=n.zeros([all_acfs.shape[0],n_lags])
@@ -206,7 +206,7 @@ def estimate_epsilons():
             avg_Ruu=avg_Ruu/n_avg
             avg_Rvv=avg_Rvv/n_avg
             
-            fr=fit_epsilon.fit_epsilon0(s_h[min_lag:max_lag],avg_Ruu,debug=c.debug_epsilon_fit)
+            fr=fit_epsilon.fit_epsilon0(s_h[min_lag:max_lag],avg_Ruu,debug=c.debug_epsilon_fit,fit_synoptic=c.horizontal_fit_synoptic)
 
             # plot equinox and summer
             summer_idx=87
@@ -235,7 +235,7 @@ def estimate_epsilons():
             res_uu=fr["resid"]
             eps_uu_std.append(fr["eps_std"])
             resids_uu[i,:]=res_uu
-            fr=fit_epsilon.fit_epsilon0(s_h[min_lag:max_lag],avg_Rvv,debug=c.debug_epsilon_fit)
+            fr=fit_epsilon.fit_epsilon0(s_h[min_lag:max_lag],avg_Rvv,debug=c.debug_epsilon_fit,fit_synoptic=c.horizontal_fit_synoptic)
             xhat_vv=fr["xhat"]
             res_vv=fr["resid"]
             resids_vv[i,:]=res_vv
