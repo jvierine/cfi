@@ -36,10 +36,14 @@ def estimate_epsilons():
     E=n.zeros([12,n_heights])
     ED=n.zeros([365,n_heights])
     ED[:,:]=n.nan
+    EDvv=n.zeros([365,n_heights])
+    EDvv[:,:]=n.nan
     EE=n.zeros([365,n_heights])
     EE[:,:]=n.nan
     R0S=n.zeros([365,n_heights])
     R0S[:,:]=n.nan
+    R0Svv=n.zeros([365,n_heights])
+    R0Svv[:,:]=n.nan
 
     hidx=n.argsort(c.horizontal_correlation_heights)
     heights=c.horizontal_correlation_heights[hidx]
@@ -126,7 +130,7 @@ def estimate_epsilons():
             days=n.arange(all_acfs.shape[0])
             use_colormesh=True
             if use_colormesh:
-                im=ax1.pcolormesh(s_h[1:],t0s,all_acfs[:,1:,1],cmap="jet")
+                im=ax1.pcolormesh(s_h[1:],t0s,all_acfs[:,1:,0],cmap="jet")
                 cb=plt.colorbar(im,cax=cbax,orientation="horizontal",ticklocation="top")
                 cb.set_label("$R_{LL}$ (m$^2$/s$^2$)")
                 #ax1.colorbar()
@@ -165,7 +169,8 @@ def estimate_epsilons():
         average = c.horizontal_correlation_post_avg
 
         eps_uu=[]
-        ke_uu=[]        
+        ke_uu=[]
+        ke_vv=[]                
         eps_vv=[]
         eps_uu_std=[]
         eps_vv_std=[]        
@@ -241,10 +246,12 @@ def estimate_epsilons():
                 eps_uu.append(xhat_uu[0])
                 eps_vv.append(xhat_vv[0])
                 ke_uu.append(xhat_uu[1])
+                ke_vv.append(xhat_vv[1])                
             else:
                 eps_uu.append(n.nan)
                 eps_vv.append(n.nan)
                 ke_uu.append(n.nan)
+                ke_vv.append(n.nan)                
 
             eps_month[int(t0s[i].month-1)]+=xhat_uu[0]*1e3
             eps_count[int(t0s[i].month-1)]+=1.0
@@ -252,12 +259,16 @@ def estimate_epsilons():
             
         eps_uu=n.array(eps_uu)
         eps_uu_std=n.array(eps_uu_std)        
-        eps_vv=n.array(eps_vv)
+        eps_vv=n.array(eps_vv)        
         ke_uu=n.array(ke_uu)
+        ke_vv=n.array(ke_vv)        
 
         
         ED[n.array(n.floor(365*(t00-n.min(t00))/(24*3600*365)),dtype=n.int),rhidx[hi]]=eps_uu*1e3
+        EDvv[n.array(n.floor(365*(t00-n.min(t00))/(24*3600*365)),dtype=n.int),rhidx[hi]]=eps_vv*1e3        
+        
         R0S[n.array(n.floor(365*(t00-n.min(t00))/(24*3600*365)),dtype=n.int),rhidx[hi]]=ke_uu
+        R0Svv[n.array(n.floor(365*(t00-n.min(t00))/(24*3600*365)),dtype=n.int),rhidx[hi]]=ke_vv        
         EE[n.array(n.floor(365*(t00-n.min(t00))/(24*3600*365)),dtype=n.int),rhidx[hi]]=eps_uu_std*1e3
         
         if c.debug_monthly_epsilon:
@@ -311,24 +322,43 @@ def estimate_epsilons():
   #  plt.subplot(122)
     # don't show epsilon with error larger than 10 mW/kg
     ED[EE > 10]=n.nan
+    EDvv[EE > 10]=n.nan    
     months=12*n.arange(365)/365
     #heights
     mm,hh=n.meshgrid(months,heights)
-    plt.subplot(211)
-    plt.pcolormesh(mm,hh,n.transpose(ED),vmin=0,vmax=50,cmap="jet")
+    plt.subplot(221)
+    plt.pcolormesh(mm,hh,n.transpose(ED),vmin=0,vmax=50)
     plt.ylim(c.epsilon_hlimit)
     plt.xlabel("Month")
     plt.ylabel("Height (km)")
+    plt.title("$\\varepsilon_{uu}$")    
     cb=plt.colorbar()
     cb.set_label("$\\varepsilon$ (mW/kg)")
 
-    plt.subplot(212)    
-    plt.pcolormesh(mm,hh,n.transpose(R0S),vmin=0,vmax=400,cmap="jet")
+    plt.subplot(222)
+    plt.pcolormesh(mm,hh,n.transpose(EDvv),vmin=0,vmax=50)
+    plt.ylim(c.epsilon_hlimit)
+    plt.xlabel("Month")
+    plt.ylabel("Height (km)")
+    plt.title("$\\varepsilon_{vv}$")
+    cb=plt.colorbar()
+    cb.set_label("$\\varepsilon$ (mW/kg)")
+    
+    plt.subplot(223)    
+    plt.pcolormesh(mm,hh,n.transpose(R0S),vmin=0,vmax=1400)
     plt.ylim(c.epsilon_hlimit)
     plt.xlabel("Month")
     plt.ylabel("Height (km)")
     cb=plt.colorbar()
     cb.set_label("$R_{LL}(0)$ (m$^2$/s$^2$)")
+    
+    plt.subplot(224)    
+    plt.pcolormesh(mm,hh,n.transpose(R0Svv),vmin=0,vmax=1400)
+    plt.ylim(c.epsilon_hlimit)
+    plt.xlabel("Month")
+    plt.ylabel("Height (km)")
+    cb=plt.colorbar()
+    cb.set_label("$R_{TT}(0)$ (m$^2$/s$^2$)")
     
     #plt.colorbar()
     

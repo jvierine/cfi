@@ -122,18 +122,18 @@ def fit_month( m0=0, m1=12, debug=False ):
 r=fit_month(m0=0,m1=12)
 pR0=r["R0"]
 peps=r["eps"]
-plt.plot(pR0,peps,".",alpha=0.1)
+plt.scatter(pR0,peps,s=1,c="blue")
 plt.title("Full year")
 r0s=n.linspace(1,n.sqrt(600),num=100)
 xhat=r["xhat"]
 xhat2=r["xhat2"]
 xhat3=r["xhat3"]
 exp_std=r["exp_std"]
-plt.plot(r0s,xhat[0]*r0s**xhat[1],label="$\\varepsilon \\propto \sigma_{u}^{%1.1f \pm %1.2f}$"%(xhat[1],exp_std))
-plt.plot(r0s,xhat3[0]*r0s**3.0,label="$\\varepsilon \\propto (%1.0f)^{-1}\\sigma_{u}^{3}$"%(1/xhat3[0]))
-plt.plot(r0s,xhat2[0]*r0s**2.0,label="$\\varepsilon \\propto \\sigma_{u}^{2}$")
+plt.plot(r0s,xhat[0]*r0s**xhat[1],label="$\\varepsilon \\propto \sigma_{h}^{%1.1f \pm %1.2f}$"%(xhat[1],exp_std))
+plt.plot(r0s,xhat3[0]*r0s**3.0,label="$\\varepsilon \\propto (%1.0f)^{-1}\\sigma_{h}^{3}$"%(1/xhat3[0]))
+plt.plot(r0s,xhat2[0]*r0s**2.0,label="$\\varepsilon \\propto \\sigma_{h}^{2}$")
 plt.legend()
-plt.xlabel("$\\sigma_{u} = \\sqrt{R_{LL}(0)}$ (m/s)")
+plt.xlabel("$\\sigma_{h} = \\sqrt{R_{LL}(0)}$ (m/s)")
 plt.ylabel("$\\varepsilon$ (mW/kg)")
 plt.tight_layout()
 plt.show()
