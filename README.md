@@ -15,3 +15,5 @@ Other relevant papers:
 Poblet FL, Vierinen J, Avsarkisov V, Conte JF, Charuvil Asokan H, Jacobi C, Chau JL. Horizontal Correlation Functions of Wind Fluctuations in the Mesosphere and Lower Thermosphere. Journal of Geophysical Research: Atmospheres. 2023 Mar 27;128(6):e2022JD038092.
 
 Poblet FL, Chau JL, Conte JF, Avsarkisov V, Vierinen J, Charuvil Asokan H. Horizontal wavenumber spectra of vertical vorticity and horizontal divergence of mesoscale dynamics in the mesosphere and lower thermosphere using multistatic specular meteor radar observations. Earth and Space Science. 2022 Sep;9(9):e2021EA002201.
+
+Charuvil Asokan H, Chau JL, Marino R, Vierinen J, Vargas F, Urco JM, Clahsen M, Jacobi C. Frequency spectra of horizontal winds in the mesosphere and lower thermosphere region from multistatic specular meteor radar observations during the SIMONe 2018 campaign. Earth, Planets and Space. 2022 May 11;74(1):69.
