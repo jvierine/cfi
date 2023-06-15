@@ -28,15 +28,17 @@ londeg2km=gc.londeg2km# n.pi*6371.0*n.cos(n.pi*69.0/180.0)/180.0#65.122785
 def mean_wind_grad(meas,
                    times,
                    dt=60*60,
-                   dh=1.0,
+                   dh=1.0,   # vertical sample spacing
+                   dz=3.0,   # maximum deviation in vertical direction
                    max_alt=105,
                    min_alt=80,
                    dcos_thresh=0.8,
+                   outlier_sigma=4,
                    gradients=False,
                    ofname="res/mean_wind.h5",
-                   min_number_of_measurements=32,
-                   debug=False,
-                   data='h5file'):  
+                   min_number_of_measurements=10,
+                   debug=False):
+
     
     h=meas
     heights=n.copy(h["heights"])
@@ -92,7 +94,7 @@ def mean_wind_grad(meas,
     
     # for each time step
     for ti,t in enumerate(times):
-        print("%d/%d"%(ti,len(times)))
+#        print("%d/%d"%(ti,len(times)))
         
         # ridxs is a list of index lists for each range gate        
         ridxs=[]
@@ -101,7 +103,7 @@ def mean_wind_grad(meas,
         for r in rgs:
             # the range gate is centered at range r and has a width of dh
             # the time step is centered at t and has a width of dt
-            hidx=n.where((heights > (r-dh/2.0))&(heights < (r+dh/2.0))&(ts> (t-dt/2))&(ts<(t+dt/2)))[0]
+            hidx=n.where((heights > (r-dz/2.0))&(heights < (r+dz/2.0))&(ts> (t-dt/2))&(ts<(t+dt/2)))[0]
             ridxs.append(hidx)
 
         # for each height interval
@@ -146,11 +148,14 @@ def mean_wind_grad(meas,
                     borked=True
 
                 resid=m-n.dot(A,xhat)
-                resid_std=n.median(n.abs(resid))
+                # robust estimator for standard deviation
+                resid_std=0.7*n.median(n.abs(resid))
 
                 # good measurements
-                gidx=n.where(n.abs(resid) < 4.0*resid_std)[0]
-                bidx=n.where(n.abs(resid) >= 4.0*resid_std)[0]
+                # outlier rejection, when making the estimate of mean wind
+                # by default, 100 standard deviations is an outlier
+                gidx=n.where(n.abs(resid) < outlier_sigma*resid_std)[0]
+                bidx=n.where(n.abs(resid) >= outlier_sigma*resid_std)[0]
 
                 good_meas_idx=n.concatenate((good_meas_idx,ridxs[ri][gidx]))
                 bad_meas_idx=n.concatenate((bad_meas_idx,ridxs[ri][bidx]))
@@ -213,17 +218,34 @@ def mean_wind_grad(meas,
     ho["lon0"]=lon0
     ho["latdeg2km"]=gc.latdeg2km
     ho["londeg2km"]=gc.londeg2km
-    ho["good_meas_idx"]=good_meas_idx
-    ho["bad_meas_idx"]=bad_meas_idx
+    ho["good_meas_idx"]=ok_idx[good_meas_idx]
+    ho["bad_meas_idx"]=ok_idx[bad_meas_idx]
     # fraction of bad measurements
     ho["quality"]=float(len(good_meas_idx))/float(len(good_meas_idx)+len(bad_meas_idx))
     ho.close()
 
+    # only use good measurements
+    good_meas_idx=n.unique(good_meas_idx)
+    bad_meas_idx=n.unique(bad_meas_idx)
+    # remove measurements that where considered bad at any possible point of doing the mean wind estimates
+    good_meas_idx = n.setdiff1d(good_meas_idx,bad_meas_idx)
     # 
     # This should return a function giving wind as a function of height
     # and time
     #
-    return(times,times_h,v,ve,rgs,lat0,lon0,dt2,dh2,dop_resid)
+    #    return(times,times_h,v,ve,rgs,lat0,lon0,dt2,dh2,dop_resid)
+    return({"times":times,
+            "times_h":times_h,
+            "v":v,
+            "ve":ve,
+            "rgs":rgs,
+            "lat0":lat0,
+            "lon0":lon0,
+            "dt2":dt2,
+            "dh2":dh2,
+            "dop_resid":dop_resid,
+            "good_idx":ok_idx[good_meas_idx],
+            "bad_idx":ok_idx[bad_meas_idx]})
 
 def plot_wind(md,
               t0,
@@ -240,25 +262,58 @@ def plot_wind(md,
     times=n.arange(n_times)*dt+t0
 
     dcos_thresh=0.8
-    times,times_h,v,ve,rgs,lat0,lon0,dt,dh,dop_resid=mean_wind_grad(meas=d,
-                                                                    times=times,
-                                                                    dt=avg_time,
-                                                                    dh=1.0,
-                                                                    max_alt=105,
-                                                                    min_alt=78,
-                                                                    ofname="%s/mean_wind-%d.h5"%(odir,t0),
-                                                                    gradients=True,
-                                                                    dcos_thresh=dcos_thresh)
-    v_max=100.0
+    #times,times_h,v,ve,rgs,lat0,lon0,dt,dh,dop_resid
+    mwr=mean_wind_grad(meas=d,
+                        times=times,
+                        dt=avg_time,
+                        dh=1.0,
+                        max_alt=105,
+                        min_alt=78,
+                        ofname="%s/mean_wind-%d.h5"%(odir,t0),
+                        gradients=True,
+                        dcos_thresh=dcos_thresh)
+    times=mwr["times"]
+    times_h=mwr["times_h"]
+    v=mwr["v"]
+    ve=mwr["ve"]
+    rgs=mwr["rgs"]
+    lat0=mwr["lat0"]
+    lon0=mwr["lon0"]
+    dt=mwr["dt"]
+    dh=mwr["dh"]
+    dop_resid=mwr["dop_resid"]
+    
+    v_max=200.0
     dv_max=0.5
 
+
+    # zonal
+    qu=n.copy(n.transpose(v[0,:,:]))
+    # meridional
+    qv=n.copy(n.transpose(v[1,:,:]))
+    qu[qu<-v_max]=-v_max
+    qv[qv<-v_max]=-v_max
+    qu[qu>v_max]=v_max
+    qv[qv>v_max]=v_max
+    
+    plt.quiver(times_h, rgs, qu, qv)
+    plt.title("Horizontal wind (right is east)")
+    plt.xlabel("Time (UT hour)")
+    plt.ylabel("Height (km)")
+    plt.tight_layout()
+    plt.savefig("%s/quiv_%d.png"%(odir,t0))
+    plt.clf()
+    plt.close()
+
+    
     if gradients:    
-        plt.figure(figsize=(8,8))
+        plt.figure(figsize=(20,20))
         plt.subplot(321)
         plt.pcolormesh(times_h,rgs,n.transpose(v[0,:,:]),vmin=-v_max,vmax=v_max,cmap="jet")
         plt.title("Zonal mean wind $\overline{u}$ (m/s)")
-        plt.xlabel("Time (h)")
-        plt.ylabel("Height")
+        plt.xlabel("Time (h since %s)"%(stuffr.unix2datestr(t0)))        
+#        plt.xlabel("Time (h)")
+        plt.ylabel("Height (km)")
         plt.colorbar()
         plt.subplot(322)
         plt.pcolormesh(times_h,rgs,n.transpose(v[1,:,:]),vmin=-v_max,vmax=v_max,cmap="jet")
@@ -295,23 +350,30 @@ def plot_wind(md,
         plt.colorbar()        
     else:
         plt.figure(figsize=(8,8))
-        plt.subplot(311)
+        plt.subplot(221)
         plt.pcolormesh(times_h,rgs,n.transpose(v[0,:,:]),vmin=-v_max,vmax=v_max,cmap="jet")
         plt.title("Zonal mean wind $\overline{u}$ (m/s)")
         plt.xlabel("Time (h since %s)"%(stuffr.unix2datestr(t0)))
         plt.ylabel("Height")
         plt.colorbar()
         
-        plt.subplot(312)
+        plt.subplot(222)
         plt.pcolormesh(times_h,rgs,n.transpose(v[1,:,:]),vmin=-v_max,vmax=v_max,cmap="jet")
         plt.title("Meridional mean wind $\overline{v}$ (m/s)")
         plt.xlabel("Time (h)")
         plt.ylabel("Height")
         plt.colorbar()
 
-        plt.subplot(313)
-        plt.pcolormesh(times_h,rgs,n.transpose(n.sqrt(dop_resid)),vmin=0,vmax=100.0,cmap="plasma")
-        plt.title("Doppler residual RMS (rad/s)")
+        plt.subplot(223)
+        plt.pcolormesh(times_h,rgs,n.transpose(n.sqrt(dop_resid)),vmin=0,vmax=50.0,cmap="plasma")
+        plt.title("Doppler residual RMS (rad/s))")
+        plt.xlabel("Time (h)")
+        plt.ylabel("Height")
+        plt.colorbar()
+        
+        plt.subplot(224)
+        plt.pcolormesh(times_h,rgs,n.sqrt(n.transpose(v[1,:,:])**2.0 + n.transpose(v[0,:,:])**2.0),vmin=0,vmax=v_max,cmap="plasma")
+        plt.title("Velocity magnitude (m/s)")
         plt.xlabel("Time (h)")
         plt.ylabel("Height")
         plt.colorbar()
@@ -322,6 +384,32 @@ def plot_wind(md,
     plt.clf()
     plt.close()
 
+    plt.figure(figsize=(8,8))
+    plt.subplot(221)
+    # v = c*df/2/f_rad
+    plt.pcolormesh(times_h,rgs,n.sqrt(n.transpose(dop_resid)),vmin=0,vmax=50,cmap="jet")
+    plt.title("Dopppler residual stdev (rad/s)")
+    plt.colorbar()
+    plt.subplot(222)    
+    plt.pcolormesh(times_h,rgs,n.transpose(v[0,:,:]),vmin=-v_max,vmax=v_max,cmap="jet")
+    plt.title("Zonal wind (m/s)")        
+    plt.colorbar()    
+    plt.subplot(223)        
+    plt.pcolormesh(times_h,rgs,n.transpose(v[1,:,:]),vmin=-v_max,vmax=v_max,cmap="jet")
+    plt.title("Meridional wind (m/s)")                
+    plt.colorbar()    
+
+
+    plt.subplot(224)        
+    plt.pcolormesh(times_h,rgs,n.sqrt(n.transpose(dop_resid))/(n.sqrt(n.transpose(v[1,:,:])**2.0+n.transpose(v[0,:,:])**2.0)),vmin=0,vmax=3,cmap="jet")
+    plt.title("Normalized Doppler res stdev ((rad/s)/(m/s))")
+    plt.colorbar()    
+    
+    plt.tight_layout()
+    plt.savefig("%s/resid_%d.png"%(odir,t0))
+    plt.clf()
+    plt.close()
+    
 def plot_all():
     md=mr.mmaria_data(c.data_directory)#for many files in a directory
     b=md.get_bounds()
@@ -332,11 +420,15 @@ def plot_all():
 
     os.system("mkdir -p %s/mean_wind"%(c.plot_directory))
     for di in range(rank,n_days,size):
-        plot_wind(md,
-                  t0=bt0+24*3600*di,
-                  t1=bt0+24*3600*(di+1),
-                  odir="%s/mean_wind"%(c.plot_directory),
-                  avg_time=3600*4)
+        try:
+            plot_wind(md,
+                      t0=bt0+24*3600*di,
+                      t1=bt0+24*3600*(di+1),
+                      odir="%s/mean_wind"%(c.plot_directory),
+                      dt=600,
+                      avg_time=3600)
+        except:
+            print("error with %s"%(di))
 
 if __name__ == "__main__":
     plot_all()
