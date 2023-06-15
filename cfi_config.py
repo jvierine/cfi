@@ -30,7 +30,7 @@ debug_epsilon_fit=False
 if "debug_epsilon_fit" in c["cfi"].keys():
     debug_epsilon_fit=bool(json.loads(c["cfi"]["debug_epsilon_fit"]))
     
-high_pass_filter=False
+high_pass_filter=True
 if "high_pass_filter" in c["cfi"].keys():
     high_pass_filter=bool(json.loads(c["cfi"]["high_pass_filter"]))
 
