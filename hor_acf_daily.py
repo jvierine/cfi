@@ -59,10 +59,11 @@ def avg_hor_acfs(md, # data
             plt.plot(dw["lats"],dw["lons"],".")
             plt.tight_layout()
             plt.show()
-    
+    print(dw)
     d=md.read_data(t0=t0,t1=t1)    
     n_meas=len(d["t"])
     print("n_meteors %d"%(n_meas))
+    mw_fname="%s/%s/%s/tmp/tmp-%05d.h5"%(c.data_directory,c.data_prefix,name,rank)
     if n_meas > 100:
         if remove_mean:
             mwr=mw.mean_wind_grad(meas=dw,
@@ -73,8 +74,8 @@ def avg_hor_acfs(md, # data
                                   max_alt=110,
                                   min_alt=70,
                                   dcos_thresh=dcos_thresh,
-                                  ofname="%s/%s/%s/tmp/tmp-%05d.h5"%(c.data_directory,c.data_prefix,name,rank),
-                                  outlier_sigma=4,           # don't be overly strict about removing measurements that don't conform with the mean wind
+                                  ofname=mw_fname,
+                                  outlier_sigma=4,    # don't be overly strict about removing measurements that don't conform with the mean wind
                                   gradients=False,
                                   debug=False)
 
@@ -83,7 +84,7 @@ def avg_hor_acfs(md, # data
                           mean_rem=remove_mean,
                           plot_dops=False,
                           dcos_thresh=dcos_thresh,
-                          mean_wind_file="%s/%s/%s/tmp/tmp-%05d.h5"%(c.data_directory,c.data_prefix,name,rank),
+                          mean_wind_file=mw_fname,
                           data='mmaria')
         
         ih0,idtau,dis_h,acfs,errs,ishs,si_h,names=cfi.hor_acfs(meas,
@@ -109,6 +110,11 @@ def avg_hor_acfs(md, # data
         ho["ds_z"]=ds_z
         ho["dtau"]=dtau
         ho.close()
+        try:
+            os.system("rm %s"%(mw_fname))
+        except:
+            print("couldn't remove %s"%(mw_fname))
+            pass
     else:
         print("not enough meteors")
             
