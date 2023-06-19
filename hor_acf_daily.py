@@ -136,7 +136,7 @@ for h0 in c.horizontal_correlation_heights:
         print("averaging correlation function of %d days"%(c.horizontal_correlation_n_days))
         avg_hor_acfs(md,
                      dcos_thresh=c.dcos_thresh,
-                     mean_wind_time_avg=4*3600.0,
+                     mean_wind_time_avg=c.horizontal_correlation_mean_wind_avg_time*3600.0,
                      mean_wind_time=mean_wind_time,
                      h0=h0,
                      dh=c.horizontal_correlation_dh, # look for meteors between [h0-dh/2,h0+dh/2]

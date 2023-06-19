@@ -51,6 +51,11 @@ horizontal_correlation_n_days=1
 if "horizontal_correlation_n_days" in c["cfi"].keys():
     horizontal_correlation_n_days=float(json.loads(c["cfi"]["horizontal_correlation_n_days"]))
 
+horizontal_correlation_mean_wind_avg_time=4.0
+if "horizontal_correlation_mean_wind_avg_time" in c["cfi"].keys():
+    horizontal_correlation_mean_wind_avg_time=float(json.loads(c["cfi"]["horizontal_correlation_mean_wind_avg_time"]))
+    
+    
 horizontal_correlation_post_avg=1
 if "horizontal_correlation_post_avg" in c["cfi"].keys():
     horizontal_correlation_post_avg=int(json.loads(c["cfi"]["horizontal_correlation_post_avg"]))
