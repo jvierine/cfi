@@ -59,10 +59,11 @@ def avg_hor_acfs(md, # data
             plt.plot(dw["lats"],dw["lons"],".")
             plt.tight_layout()
             plt.show()
-    
+    print(dw)
     d=md.read_data(t0=t0,t1=t1)    
     n_meas=len(d["t"])
     print("n_meteors %d"%(n_meas))
+    mw_fname="%s/%s/%s/tmp/tmp-%05d.h5"%(c.data_directory,c.data_prefix,name,rank)
     if n_meas > 100:
         if remove_mean:
             mwr=mw.mean_wind_grad(meas=dw,
@@ -73,8 +74,8 @@ def avg_hor_acfs(md, # data
                                   max_alt=110,
                                   min_alt=70,
                                   dcos_thresh=dcos_thresh,
-                                  ofname="%s/%s/%s/tmp/tmp-%05d.h5"%(c.data_directory,c.data_prefix,name,rank),
-                                  outlier_sigma=4,           # don't be overly strict about removing measurements that don't conform with the mean wind
+                                  ofname=mw_fname,
+                                  outlier_sigma=4,    # don't be overly strict about removing measurements that don't conform with the mean wind
                                   gradients=False,
                                   debug=False)
 
@@ -83,7 +84,7 @@ def avg_hor_acfs(md, # data
                           mean_rem=remove_mean,
                           plot_dops=False,
                           dcos_thresh=dcos_thresh,
-                          mean_wind_file="%s/%s/%s/tmp/tmp-%05d.h5"%(c.data_directory,c.data_prefix,name,rank),
+                          mean_wind_file=mw_fname,
                           data='mmaria')
         
         ih0,idtau,dis_h,acfs,errs,ishs,si_h,names=cfi.hor_acfs(meas,
@@ -109,6 +110,11 @@ def avg_hor_acfs(md, # data
         ho["ds_z"]=ds_z
         ho["dtau"]=dtau
         ho.close()
+        try:
+            os.system("rm %s"%(mw_fname))
+        except:
+            print("couldn't remove %s"%(mw_fname))
+            pass
     else:
         print("not enough meteors")
             
@@ -134,19 +140,24 @@ for h0 in c.horizontal_correlation_heights:
         # 900 second time step for mean wind, but the mean wind averaging window is four hours
         mean_wind_time = n.linspace(t0,t1,num=int(96*c.horizontal_correlation_n_days))
         print("averaging correlation function of %d days"%(c.horizontal_correlation_n_days))
-        avg_hor_acfs(md,
-                     dcos_thresh=c.dcos_thresh,
-                     mean_wind_time_avg=c.horizontal_correlation_mean_wind_avg_time*3600.0,
-                     mean_wind_time=mean_wind_time,
-                     h0=h0,
-                     dh=c.horizontal_correlation_dh, # look for meteors between [h0-dh/2,h0+dh/2]
-                     ds_h=25.0,            # horizontal distance resolution
-                     dtau=c.horizontal_correlation_dtau,           # lag time resolution
-                     s_h=n.arange(0.0,400.0,12.5),
-                     ds_z=1,               # vertical lag resolution
-                     t0=t0,
-                     t1=t1,
-                     remove_mean=c.high_pass_filter,
-                     name=name)
+        try:
+            avg_hor_acfs(md,
+                         dcos_thresh=c.dcos_thresh,
+                         mean_wind_time_avg=c.horizontal_correlation_mean_wind_avg_time*3600.0,
+                         mean_wind_time=mean_wind_time,
+                         h0=h0,
+                         dh=c.horizontal_correlation_dh, # look for meteors between [h0-dh/2,h0+dh/2]
+                         ds_h=25.0,            # horizontal distance resolution
+                         dtau=c.horizontal_correlation_dtau,           # lag time resolution
+                         s_h=n.arange(0.0,400.0,12.5),
+                         ds_z=1,               # vertical lag resolution
+                         t0=t0,
+                         t1=t1,
+                         remove_mean=c.high_pass_filter,
+                         name=name)
+        except:
+            print("couldn't calculate correlation function!")
+            pass
+
 
 
