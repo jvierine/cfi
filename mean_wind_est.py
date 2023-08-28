@@ -16,6 +16,7 @@ import datetime
 import stuffr
 import os
 import geoid_const as gc
+import traceback
 
 from mpi4py import MPI
 comm=MPI.COMM_WORLD
@@ -89,8 +90,8 @@ def mean_wind_grad(meas,
     dop_resid[:,:]=n.nan    
 
     # these measurements are good
-    good_meas_idx = n.array([],dtype=n.int)
-    bad_meas_idx = n.array([],dtype=n.int)
+    good_meas_idx = n.array([],dtype=int)
+    bad_meas_idx = n.array([],dtype=int)
     
     # for each time step
     for ti,t in enumerate(times):
@@ -241,8 +242,8 @@ def mean_wind_grad(meas,
             "rgs":rgs,
             "lat0":lat0,
             "lon0":lon0,
-            "dt2":dt2,
-            "dh2":dh2,
+            "dt":dt2,
+            "dh":dh2,
             "dop_resid":dop_resid,
             "good_idx":ok_idx[good_meas_idx],
             "bad_idx":ok_idx[bad_meas_idx]})
@@ -428,6 +429,7 @@ def plot_all():
                       dt=600,
                       avg_time=3600)
         except:
+            traceback.print_exc()
             print("error with %s"%(di))
 
 if __name__ == "__main__":
