@@ -6,8 +6,14 @@ import matplotlib.pyplot as plt
 
 # our internal modules
 import mmaria_read as mr
-import cfi_dac as cfi
 import cfi_config as c
+
+if c.cfi_order == 2:
+    import c.cfi_dac as cfi
+else:
+    print("using third order structure function")
+    import third_order as cfi
+
 import mean_wind_est as mw
 import os
 import stuffr

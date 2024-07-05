@@ -60,6 +60,8 @@ horizontal_correlation_post_avg=1
 if "horizontal_correlation_post_avg" in c["cfi"].keys():
     horizontal_correlation_post_avg=int(json.loads(c["cfi"]["horizontal_correlation_post_avg"]))
 
+epsilon_post_avg=0
+    
 epsilon_hlimit=[70,110]
 if "epsilon_hlimit" in c["cfi"].keys():
     epsilon_hlimit=n.array(json.loads(c["cfi"]["epsilon_hlimit"]))
@@ -83,6 +85,13 @@ if "horizontal_fit_max_lag" in c["cfi"].keys():
     horizontal_fit_max_lag=int(json.loads(c["cfi"]["horizontal_fit_max_lag"]))
 if "horizontal_fit_min_lag" in c["cfi"].keys():
     horizontal_fit_min_lag=int(json.loads(c["cfi"]["horizontal_fit_min_lag"]))
+
+
+
+cfi_order=2
+if "cfi_order" in c["cfi"].keys():
+    cfi_order=int(json.loads(c["cfi"]["cfi_order"]))
+    
 
 #data_directory="/data0/SIMONe_multilink/JRO"
 #plot_directory="/data0/SIMONe_multilink/JRO/"
