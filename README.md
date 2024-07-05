@@ -23,3 +23,12 @@ Poblet FL, Chau JL, Conte JF, Avsarkisov V, Vierinen J, Charuvil Asokan H. Horiz
 Charuvil Asokan H, Chau JL, Marino R, Vierinen J, Vargas F, Urco JM, Clahsen M, Jacobi C. Frequency spectra of horizontal winds in the mesosphere and lower thermosphere region from multistatic specular meteor radar observations during the SIMONe 2018 campaign. Earth, Planets and Space. 2022 May 11;74(1):69.
 
 Vierinen, J., Chau, J. L., Charuvil, H., Urco, J. M., Clahsen, M., Avsarkisov, V., ... & Volz, R. (2019). Observing mesospheric turbulence with specular meteor radars: A novel method for estimating second‐order statistics of wind velocity. Earth and Space Science, 6(7), 1171-1195.
+
+# Usage 
+
+calculate correlation functions:
+> mpirun -np 8 python3 hor_acf_daily.py -c norway_2022.ini
+plot:
+> python3 plot_hor_acf_hall.py -c norway_2022.ini
+
+
